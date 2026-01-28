@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.outlined.Album
 import androidx.compose.material.icons.outlined.Favorite
@@ -81,6 +80,7 @@ import com.theveloper.pixelplay.presentation.screens.PlayerSheetCollapsedCornerR
 import com.theveloper.pixelplay.presentation.viewmodel.PlayerViewModel
 import com.theveloper.pixelplay.presentation.viewmodel.PlaylistUiState
 import com.theveloper.pixelplay.data.model.PlaylistShapeType
+import com.theveloper.pixelplay.presentation.components.AdaptiveScrollbar
 import racra.compose.smooth_corner_rect_library.AbsoluteSmoothCornerShape
 import com.theveloper.pixelplay.utils.shapes.RoundedStarShape
 import androidx.compose.ui.graphics.Shape
@@ -244,39 +244,46 @@ fun PlaylistItems(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
-            .fillMaxSize()
-            .clip(
-                RoundedCornerShape(
-                    topStart = 26.dp,
-                    topEnd = 26.dp,
-                    bottomStart = PlayerSheetCollapsedCornerRadius,
-                    bottomEnd = PlayerSheetCollapsedCornerRadius
-                )
-            ),
-        state = listState,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + 30.dp)
-    ) {
-        items(filteredPlaylists, key = { it.id }) { playlist ->
-            val rememberedOnClick = remember(playlist.id) {
-                {
-                    if (isAddingToPlaylist && currentSong != null && selectedPlaylists != null) {
-                        val currentSelection = selectedPlaylists[playlist.id] ?: false
-                        selectedPlaylists[playlist.id] = !currentSelection
-                    } else
-                        navController?.navigate(Screen.PlaylistDetail.createRoute(playlist.id))
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
+                .fillMaxSize()
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 26.dp,
+                        topEnd = 26.dp,
+                        bottomStart = PlayerSheetCollapsedCornerRadius,
+                        bottomEnd = PlayerSheetCollapsedCornerRadius
+                    )
+                ),
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + 30.dp)
+        ) {
+            items(filteredPlaylists, key = { it.id }) { playlist ->
+                val rememberedOnClick = remember(playlist.id) {
+                    {
+                        if (isAddingToPlaylist && currentSong != null && selectedPlaylists != null) {
+                            val currentSelection = selectedPlaylists[playlist.id] ?: false
+                            selectedPlaylists[playlist.id] = !currentSelection
+                        } else {
+                            navController?.navigate(Screen.PlaylistDetail.createRoute(playlist.id))
+                        }
+                    }
                 }
+                PlaylistItem(
+                    playlist = playlist,
+                    playerViewModel = playerViewModel,
+                    onClick = { rememberedOnClick() },
+                    isAddingToPlaylist = isAddingToPlaylist,
+                    selectedPlaylists = selectedPlaylists
+                )
             }
-            PlaylistItem(
-                playlist = playlist,
-                playerViewModel = playerViewModel,
-                onClick = { rememberedOnClick() },
-                isAddingToPlaylist = isAddingToPlaylist,
-                selectedPlaylists = selectedPlaylists
-            )
+        }
+
+        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+            AdaptiveScrollbar(state = listState)
         }
     }
 }

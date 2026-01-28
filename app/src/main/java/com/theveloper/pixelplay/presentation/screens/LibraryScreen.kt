@@ -112,6 +112,7 @@ import com.theveloper.pixelplay.presentation.components.AiPlaylistSheet
 import com.theveloper.pixelplay.presentation.components.PlaylistArtCollage
 import com.theveloper.pixelplay.presentation.components.ReorderTabsSheet
 import com.theveloper.pixelplay.presentation.components.SongInfoBottomSheet
+import com.theveloper.pixelplay.presentation.components.AdaptiveScrollbar
 import com.theveloper.pixelplay.presentation.components.subcomps.LibraryActionRow
 import com.theveloper.pixelplay.presentation.navigation.Screen
 import com.theveloper.pixelplay.presentation.viewmodel.ColorSchemePair
@@ -147,7 +148,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Edit as RoundedEdit
 import androidx.compose.material3.ButtonDefaults
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import kotlinx.collections.immutable.ImmutableList
@@ -449,7 +450,7 @@ fun LibraryScreen(
                             onClick = { showReorderTabsSheet = true }
                         ) {
                             Icon(
-                                Icons.Default.Edit,
+                                RoundedEdit,
                                 contentDescription = "Reorder tabs",
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
                             )
@@ -1115,582 +1116,11 @@ fun LibraryNavigationPill(
     }
 }
 
-//@OptIn(ExperimentalAnimationApi::class)
-//@Composable
-//private fun LibraryNavigationPill(
-//    title: String,
-//    animationDirection: Int,
-//    onClick: () -> Unit
-//) {
-//    val pillShape = RoundedCornerShape(26.dp)
-//    Surface(
-//        shape = pillShape,
-//        tonalElevation = 8.dp,
-//        color = MaterialTheme.colorScheme.primaryContainer,
-//        modifier = Modifier
-//            .padding(start = 4.dp)
-//            .clip(pillShape)
-//            .clickable(onClick = onClick)
-//    ) {
-//        Row(
-//            modifier = Modifier
-//                .clip(pillShape)
-//                .padding(horizontal = 10.dp, vertical = 10.dp),
-//            horizontalArrangement = Arrangement.spacedBy(16.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            AnimatedContent(
-//                modifier = Modifier.padding(start = 8.dp),
-//                targetState = title,
-//                transitionSpec = {
-//                    val direction = animationDirection.coerceIn(-1, 1)
-//                    val slideIn = slideInHorizontally { fullWidth -> if (direction >= 0) fullWidth else -fullWidth } + fadeIn()
-//                    val slideOut = slideOutHorizontally { fullWidth -> if (direction >= 0) -fullWidth else fullWidth } + fadeOut()
-//                    slideIn.togetherWith(slideOut)
-//                },
-//                label = "LibraryPillTitle"
-//            ) { targetTitle ->
-//                Text(
-//                    text = targetTitle,
-//                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp),
-//                    fontWeight = FontWeight.SemiBold,
-//                    color = MaterialTheme.colorScheme.onSurface
-//                )
-//            }
-//
-//            Box(
-//               modifier = Modifier
-//                   .background(
-//                       color = MaterialTheme.colorScheme.onPrimaryContainer,
-//                       shape = CircleShape
-//                   )
-//            ) {
-//                Icon(
-//                    modifier = Modifier.padding(
-//                        4.dp
-//                    ),
-//                    imageVector = Icons.Rounded.KeyboardArrowDown,
-//                    contentDescription = null,
-//                    tint = MaterialTheme.colorScheme.primaryContainer
-//                )
-//            }
-//        }
-//    }
-//}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LibraryTabSwitcherSheet(
-    tabs: List<String>,
-    currentIndex: Int,
-    onTabSelected: (Int) -> Unit,
-    onEditClick: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Library tabs",
-                style = MaterialTheme.typography.headlineSmall,
-                fontFamily = GoogleSansRounded
-            )
-            Text(
-                text = "Jump directly to any tab or reorder them.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 150.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 24.dp, top = 8.dp)
-            ) {
-                itemsIndexed(tabs, key = { index, tab -> "$tab-$index" }) { index, rawId ->
-                    val tabId = rawId.toLibraryTabIdOrNull() ?: return@itemsIndexed
-                    LibraryTabGridItem(
-                        tabId = tabId,
-                        isSelected = index == currentIndex,
-                        onClick = { onTabSelected(index) }
-                    )
-                }
-
-                item(
-                    span = { GridItemSpan(maxLineSpan) }
-                ) {
-                    Box(
-                       modifier = Modifier
-                           .fillMaxWidth()
-                           .heightIn(min = 46.dp, max = 60.dp)
-                    ) {
-                        FilledTonalButton(
-                            onClick = onEditClick,
-                            shape = CircleShape,
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                            ),
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .align(Alignment.CenterEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Edit,
-                                contentDescription = null
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Reorder tabs")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LibraryTabGridItem(
-    tabId: LibraryTabId,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val shape = RoundedCornerShape(20.dp)
-    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
-    val iconContainer = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
-    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(onClick = onClick),
-        shape = shape,
-        color = containerColor,
-        tonalElevation = if (isSelected) 6.dp else 2.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(iconContainer.copy(alpha = 0.92f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = tabId.iconRes()),
-                    contentDescription = tabId.title,
-                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-
-            Text(
-                text = tabId.displayTitle(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = textColor
-            )
-        }
-    }
-}
-
-private fun LibraryTabId.iconRes(): Int = when (this) {
-    LibraryTabId.SONGS -> R.drawable.rounded_music_note_24
-    LibraryTabId.ALBUMS -> R.drawable.rounded_album_24
-    LibraryTabId.ARTISTS -> R.drawable.rounded_artist_24
-    LibraryTabId.PLAYLISTS -> R.drawable.rounded_playlist_play_24
-    LibraryTabId.FOLDERS -> R.drawable.rounded_folder_24
-    LibraryTabId.LIKED -> R.drawable.rounded_favorite_24
-}
-
-private fun LibraryTabId.displayTitle(): String =
-    title.lowercase().replaceFirstChar { char ->
-        if (char.isLowerCase()) char.titlecase(Locale.getDefault()) else char.toString()
-    }
-
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-fun LibraryFoldersTab(
-    folders: ImmutableList<MusicFolder>,
-    currentFolder: MusicFolder?,
-    isLoading: Boolean,
-    onNavigateBack: () -> Unit,
-    onFolderClick: (String) -> Unit,
-    onFolderAsPlaylistClick: (MusicFolder) -> Unit,
-    onPlaySong: (Song, List<Song>) -> Unit,
-    stablePlayerState: StablePlayerState,
-    bottomBarHeight: Dp,
-    onMoreOptionsClick: (Song) -> Unit,
-    isPlaylistView: Boolean = false,
-    currentSortOption: SortOption = SortOption.FolderNameAZ,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
-) {
-    // List state moved inside AnimatedContent to prevent state sharing issues during transitions
-
-
-    AnimatedContent(
-        targetState = Pair(isPlaylistView, currentFolder?.path ?: "root"),
-        label = "FolderNavigation",
-        modifier = Modifier.fillMaxSize(),
-        transitionSpec = {
-            (slideInHorizontally { width -> width } + fadeIn())
-                .togetherWith(slideOutHorizontally { width -> -width } + fadeOut())
-        }
-    ) { (playlistMode, targetPath) ->
-        // Each navigation destination gets its own independant ListState
-        val listState = rememberLazyListState()
-        
-        // Scroll to top when sort option changes
-        LaunchedEffect(currentSortOption) {
-            listState.scrollToItem(0)
-        }
-
-        val flattenedFolders = remember(folders, currentSortOption) {
-            val flattened = flattenFolders(folders)
-            when (currentSortOption) {
-                SortOption.FolderNameZA -> flattened.sortedByDescending { it.name.lowercase() }
-                else -> flattened.sortedBy { it.name.lowercase() }
-            }
-        }
-
-        val isRoot = targetPath == "root"
-        val activeFolder = if (isRoot) null else currentFolder
-        val showPlaylistCards = playlistMode && activeFolder == null
-        val itemsToShow = remember(activeFolder, folders, flattenedFolders, currentSortOption) {
-            when {
-                showPlaylistCards -> flattenedFolders
-                activeFolder != null -> {
-                    when (currentSortOption) {
-                        SortOption.FolderNameZA -> activeFolder.subFolders.sortedByDescending { it.name.lowercase() }
-                        else -> activeFolder.subFolders.sortedBy { it.name.lowercase() }
-                    }
-                }
-                else -> {
-                     when (currentSortOption) {
-                        SortOption.FolderNameZA -> folders.sortedByDescending { it.name.lowercase() }
-                        else -> folders.sortedBy { it.name.lowercase() }
-                    }
-                }
-            }
-        }.toImmutableList()
-
-        val songsToShow = remember(activeFolder, currentSortOption) {
-            val songs = activeFolder?.songs ?: emptyList()
-            when (currentSortOption) {
-                SortOption.FolderNameZA -> songs.sortedByDescending { it.title.lowercase() }
-                else -> songs.sortedBy { it.title.lowercase() }
-            }
-        }.toImmutableList()
-        val shouldShowLoading = isLoading && itemsToShow.isEmpty() && songsToShow.isEmpty() && isRoot
-
-        Column(modifier = Modifier.fillMaxSize()) {
-            when {
-                shouldShowLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        LoadingIndicator()
-                    }
-                }
-
-                itemsToShow.isEmpty() && songsToShow.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_folder),
-                                contentDescription = null,
-                                Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                            Text(
-                                "No folders found.",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                else -> {
-                    val foldersPullToRefreshState = rememberPullToRefreshState()
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = onRefresh,
-                        state = foldersPullToRefreshState,
-                        modifier = Modifier.fillMaxSize(),
-                        indicator = {
-                            PullToRefreshDefaults.LoadingIndicator(
-                                state = foldersPullToRefreshState,
-                                isRefreshing = isRefreshing,
-                                modifier = Modifier.align(Alignment.TopCenter)
-                            )
-                        }
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .padding(horizontal = 12.dp)
-                                .fillMaxSize()
-                                .clip(
-                                    RoundedCornerShape(
-                                        topStart = 26.dp,
-                                        topEnd = 26.dp,
-                                        bottomStart = PlayerSheetCollapsedCornerRadius,
-                                        bottomEnd = PlayerSheetCollapsedCornerRadius
-                                    )
-                                ),
-                            state = listState,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(
-                                bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap,
-                                top = 0.dp                            )
-                        ) {
-                            if (showPlaylistCards) {
-                                items(itemsToShow, key = { "folder_${it.path}" }) { folder ->
-                                    FolderPlaylistItem(
-                                        folder = folder,
-                                        onClick = { onFolderAsPlaylistClick(folder) }
-                                    )
-                                }
-                            } else {
-                                items(itemsToShow, key = { "folder_${it.path}" }) { folder ->
-                                    FolderListItem(
-                                        folder = folder,
-                                        onClick = { onFolderClick(folder.path) }
-                                    )
-                                }
-                            }
-
-                            items(songsToShow, key = { "song_${it.id}" }) { song ->
-                                EnhancedSongListItem(
-                                    song = song,
-                                    isPlaying = stablePlayerState.currentSong?.id == song.id && stablePlayerState.isPlaying,
-                                    isCurrentSong = stablePlayerState.currentSong?.id == song.id,
-                                    onMoreOptionsClick = { onMoreOptionsClick(song) },
-                                    onClick = {
-                                        val songIndex = songsToShow.indexOf(song)
-                                        if (songIndex != -1) {
-                                            val songsToPlay =
-                                                songsToShow.subList(songIndex, songsToShow.size)
-                                                    .toList()
-                                            onPlaySong(song, songsToPlay)
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-    }
-}
-
-@Composable
-fun FolderPlaylistItem(folder: MusicFolder, onClick: () -> Unit) {
-    val previewSongs = remember(folder) { folder.collectAllSongs().take(9) }
-
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            PlaylistArtCollage(
-                songs = previewSongs,
-                modifier = Modifier.size(48.dp)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    folder.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontFamily = GoogleSansRounded),
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    "${folder.totalSongCount} Songs",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun FolderListItem(folder: MusicFolder, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
-    ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_folder),
-                contentDescription = "Folder",
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    .padding(8.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(folder.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("${folder.totalSongCount} Songs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-private fun flattenFolders(folders: List<MusicFolder>): List<MusicFolder> {
-    return folders.flatMap { folder ->
-        val current = if (folder.songs.isNotEmpty()) listOf(folder) else emptyList()
-        current + flattenFolders(folder.subFolders)
-    }
-}
-
-private fun MusicFolder.collectAllSongs(): List<Song> {
-    return songs + subFolders.flatMap { it.collectAllSongs() }
-}
-
-// NUEVA Pestaña para Favoritos
-@androidx.annotation.OptIn(UnstableApi::class)
-@Composable
-fun LibraryFavoritesTab(
-    favoriteSongs: List<Song>, // This is already StateFlow<ImmutableList<Song>> from ViewModel
-    playerViewModel: PlayerViewModel,
-    bottomBarHeight: Dp,
-    onMoreOptionsClick: (Song) -> Unit,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
-) {
-    val stablePlayerState by playerViewModel.stablePlayerState.collectAsState()
-    val listState = rememberLazyListState()
-
-    // Scroll to top when the list changes due to sorting
-    LaunchedEffect(favoriteSongs) {
-        if (favoriteSongs.isNotEmpty()) {
-            listState.scrollToItem(0)
-        }
-    }
-
-    // No need to collect favoriteSongs again if it's passed directly as a list
-    // However, if you need to react to its changes, ensure it's collected or passed as StateFlow's value
-
-    if (favoriteSongs.isEmpty()) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp), contentAlignment = Alignment.Center) {
-            Column(
-                modifier = Modifier.align(Alignment.TopCenter),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(Icons.Filled.FavoriteBorder, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(8.dp))
-                Text("No liked songs yet.", style = MaterialTheme.typography.titleMedium)
-                Text("Touch the heart icon in the player to add songs.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-            }
-        }
-    } else {
-        Box(modifier = Modifier
-            .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            val songsPullToRefreshState = rememberPullToRefreshState()
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                state = songsPullToRefreshState,
-                modifier = Modifier.fillMaxSize(),
-                indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(
-                        state = songsPullToRefreshState,
-                        isRefreshing = isRefreshing,
-                        modifier = Modifier.align(Alignment.TopCenter)
-                    )
-                }
-            ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = 26.dp,
-                                topEnd = 26.dp,
-                                bottomStart = PlayerSheetCollapsedCornerRadius,
-                                bottomEnd = PlayerSheetCollapsedCornerRadius
-                            )
-                        ),
-                    state = listState,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + 30.dp)
-                ) {
-                    items(favoriteSongs, key = { "fav_${it.id}" }) { song ->
-                        val isPlayingThisSong =
-                            song.id == stablePlayerState.currentSong?.id && stablePlayerState.isPlaying
-                        EnhancedSongListItem(
-                            song = song,
-                            isCurrentSong = stablePlayerState.currentSong?.id == song.id,
-                            isPlaying = isPlayingThisSong,
-                            onMoreOptionsClick = { onMoreOptionsClick(song) },
-                            onClick = {
-                                playerViewModel.showAndPlaySong(
-                                    song,
-                                    favoriteSongs,
-                                    "Liked Songs"
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun LibrarySongsTab(
     songs: ImmutableList<Song>,
     isLoadingInitial: Boolean,
-    // isLoadingMore: Boolean, // Removed
-    // canLoadMore: Boolean, // Removed
     playerViewModel: PlayerViewModel,
     bottomBarHeight: Dp,
     onMoreOptionsClick: (Song) -> Unit,
@@ -1702,7 +1132,6 @@ fun LibrarySongsTab(
     val context = LocalContext.current
     val imageLoader = context.imageLoader
 
-    // Prefetching logic for LibrarySongsTab
     LaunchedEffect(songs, listState) {
         snapshotFlow { listState.layoutInfo }
             .distinctUntilChanged()
@@ -1714,9 +1143,10 @@ fun LibrarySongsTab(
                     val prefetchThreshold = 10 // Start prefetching when 10 items are left
                     val prefetchCount = 20    // Prefetch next 20 items
 
-                    if (totalItemsCount > lastVisibleItemIndex + 1 && lastVisibleItemIndex + prefetchThreshold >= totalItemsCount - prefetchCount ) {
-                         val startIndexToPrefetch = lastVisibleItemIndex + 1
-                         val endIndexToPrefetch = (startIndexToPrefetch + prefetchCount).coerceAtMost(totalItemsCount)
+                    if (totalItemsCount > lastVisibleItemIndex + 1 && lastVisibleItemIndex + prefetchThreshold >= totalItemsCount - prefetchCount) {
+                        val startIndexToPrefetch = lastVisibleItemIndex + 1
+                        val endIndexToPrefetch =
+                            (startIndexToPrefetch + prefetchCount).coerceAtMost(totalItemsCount)
 
                         (startIndexToPrefetch until endIndexToPrefetch).forEach { indexToPrefetch ->
                             val song = songs.getOrNull(indexToPrefetch)
@@ -1737,168 +1167,105 @@ fun LibrarySongsTab(
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LoadingIndicator() // O Shimmer para la lista completa
         }
-    } else {
-        // Determine content based on loading state and data availability
-        when {
-            isLoadingInitial && songs.isEmpty() -> { // Este caso ya está cubierto arriba, pero es bueno para claridad
-                val allSongsPullToRefreshState = rememberPullToRefreshState()
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = onRefresh,
-                    state = allSongsPullToRefreshState,
-                    modifier = Modifier.fillMaxSize(),
-                    indicator = {
-                        PullToRefreshDefaults.LoadingIndicator(
-                            state = allSongsPullToRefreshState,
-                            isRefreshing = isRefreshing,
-                            modifier = Modifier.align(Alignment.TopCenter)
-                        )
-                    }
-                ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = 26.dp,
-                                    topEnd = 26.dp,
-                                    bottomStart = PlayerSheetCollapsedCornerRadius,
-                                    bottomEnd = PlayerSheetCollapsedCornerRadius
-                                )
-                            )
-                            .fillMaxSize(),
-                        state = listState,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap)
-                    ) {
-                        items(15) {
-                            EnhancedSongListItem(
-                                song = Song.emptySong(), isPlaying = false, isLoading = true,
-                                isCurrentSong = songs.isNotEmpty() && stablePlayerState.currentSong == Song.emptySong(),
-                                onMoreOptionsClick = {}, onClick = {}
-                            )
-                        }
-                    }
-                }
-            }
-
-            songs.isEmpty() && !isLoadingInitial -> { // canLoadMore removed from condition
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.rounded_music_off_24),
-                            contentDescription = "No songs found",
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text("No songs found in your library.", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "Try rescanning your library in settings if you have music on your device.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-
-            else -> {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    val artistsPullToRefreshState = rememberPullToRefreshState()
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = onRefresh,
-                        state = artistsPullToRefreshState,
-                        modifier = Modifier.fillMaxSize(),
-                        indicator = {
-                            PullToRefreshDefaults.LoadingIndicator(
-                                state = artistsPullToRefreshState,
-                                isRefreshing = isRefreshing,
-                                modifier = Modifier.align(Alignment.TopCenter)
-                            )
-                        }
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
-                                .clip(
-                                    RoundedCornerShape(
-                                        topStart = 26.dp,
-                                        topEnd = 26.dp,
-                                        bottomStart = PlayerSheetCollapsedCornerRadius,
-                                        bottomEnd = PlayerSheetCollapsedCornerRadius
-                                    )
-                                ),
-                            state = listState,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + 30.dp)
-                        ) {
-                            item(key = "songs_top_spacer") { Spacer(Modifier.height(0.dp)) }
-                            items(songs, key = { "song_${it.id}" }) { song ->
-                                val isPlayingThisSong =
-                                    song.id == stablePlayerState.currentSong?.id && stablePlayerState.isPlaying
-
-                                // Estabilizar lambdas
-                                val rememberedOnMoreOptionsClick: (Song) -> Unit =
-                                    remember(onMoreOptionsClick) {
-                                        // Esta es la lambda que `remember` ejecutará para producir el valor recordado.
-                                        // El valor recordado es la propia función `onMoreOptionsClick` (o una lambda que la llama).
-                                        { songFromListItem -> // Esta es la lambda (Song) -> Unit que se recuerda
-                                            onMoreOptionsClick(songFromListItem)
-                                        }
-                                    }
-                                val rememberedOnClick: () -> Unit = remember(song) {
-                                    { playerViewModel.showAndPlaySong(song) }
-                                }
-
-                                EnhancedSongListItem(
-                                    song = song,
-                                    isPlaying = isPlayingThisSong,
-                                    isCurrentSong = stablePlayerState.currentSong?.id == song.id,
-                                    isLoading = false,
-                                    onMoreOptionsClick = rememberedOnMoreOptionsClick,
-                                    onClick = rememberedOnClick
-                                )
-                            }
-                            // isLoadingMore indicator removed as all songs are loaded at once.
-                            // if (isLoadingMore) {
-                            //     item {
-                            //         Box(
-                            //             Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                            //             contentAlignment = Alignment.Center
-                            //         ) { CircularProgressIndicator() }
-                            //     }
-                            // }
-                        }
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.surface, Color.Transparent
-                                )
-                            )
-                        )
+    } else if (songs.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    painter = painterResource(id = R.drawable.rounded_music_off_24),
+                    contentDescription = "No songs found",
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "No songs found in your library.",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    "Try rescanning your library in settings if you have music on your device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
             }
+        }
+    } else {
+        val songsPullToRefreshState = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            state = songsPullToRefreshState,
+            modifier = Modifier.fillMaxSize(),
+            indicator = {
+                PullToRefreshDefaults.LoadingIndicator(
+                    state = songsPullToRefreshState,
+                    isRefreshing = isRefreshing,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            }
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 26.dp,
+                                topEnd = 26.dp,
+                                bottomStart = PlayerSheetCollapsedCornerRadius,
+                                bottomEnd = PlayerSheetCollapsedCornerRadius
+                            )
+                        )
+                        .fillMaxSize(),
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + 30.dp)
+                ) {
+                    item(key = "songs_top_spacer") { Spacer(Modifier.height(0.dp)) }
+                    items(songs, key = { "song_${it.id}" }) { song ->
+                        val isPlayingThisSong =
+                            song.id == stablePlayerState.currentSong?.id && stablePlayerState.isPlaying
+                        val rememberedOnMoreOptionsClick: (Song) -> Unit =
+                            remember(onMoreOptionsClick) { { songFromListItem -> onMoreOptionsClick(songFromListItem) } }
+                        val rememberedOnClick: () -> Unit =
+                            remember(song) { { playerViewModel.showAndPlaySong(song) } }
+                        EnhancedSongListItem(
+                            song = song,
+                            isPlaying = isPlayingThisSong,
+                            isCurrentSong = stablePlayerState.currentSong?.id == song.id,
+                            isLoading = false,
+                            onMoreOptionsClick = rememberedOnMoreOptionsClick,
+                            onClick = rememberedOnClick
+                        )
+                    }
+                }
+
+                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                    AdaptiveScrollbar(state = listState)
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface,
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
         }
     }
 }
 
-/**
- * Paginated version of LibrarySongsTab using Paging 3 for efficient memory usage.
- * Displays songs in pages, loading only what's needed for the current viewport.
- */
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun LibrarySongsTabPaginated(
@@ -1912,41 +1279,45 @@ fun LibrarySongsTabPaginated(
 ) {
     val listState = rememberLazyListState()
     val pullToRefreshState = rememberPullToRefreshState()
-    
-    // Handle different loading states
+
     when {
         paginatedSongs.loadState.refresh is LoadState.Loading && paginatedSongs.itemCount == 0 -> {
-            // Initial loading - show skeleton placeholders
-            LazyColumn(
-                modifier = Modifier
-                    .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 26.dp,
-                            topEnd = 26.dp,
-                            bottomStart = PlayerSheetCollapsedCornerRadius,
-                            bottomEnd = PlayerSheetCollapsedCornerRadius
+            Box(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 26.dp,
+                                topEnd = 26.dp,
+                                bottomStart = PlayerSheetCollapsedCornerRadius,
+                                bottomEnd = PlayerSheetCollapsedCornerRadius
+                            )
                         )
-                    )
-                    .fillMaxSize(),
-                state = listState,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap)
-            ) {
-                items(12) { // Show 12 skeleton items to fill the screen
-                    EnhancedSongListItem(
-                        song = Song.emptySong(),
-                        isPlaying = false,
-                        isLoading = true,
-                        isCurrentSong = false,
-                        onMoreOptionsClick = {},
-                        onClick = {}
-                    )
+                        .fillMaxSize(),
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap)
+                ) {
+                    items(12) {
+                        EnhancedSongListItem(
+                            song = Song.emptySong(),
+                            isPlaying = false,
+                            isLoading = true,
+                            isCurrentSong = false,
+                            onMoreOptionsClick = {},
+                            onClick = {}
+                        )
+                    }
+                }
+
+                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                    AdaptiveScrollbar(state = listState)
                 }
             }
         }
+
         paginatedSongs.loadState.refresh is LoadState.Error && paginatedSongs.itemCount == 0 -> {
-            // Error state
             val error = (paginatedSongs.loadState.refresh as LoadState.Error).error
             Box(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -1966,8 +1337,8 @@ fun LibrarySongsTabPaginated(
                 }
             }
         }
+
         paginatedSongs.itemCount == 0 && paginatedSongs.loadState.refresh is LoadState.NotLoading -> {
-            // Empty state
             Box(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
                 contentAlignment = Alignment.Center
@@ -1980,7 +1351,10 @@ fun LibrarySongsTabPaginated(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
-                    Text("No songs found in your library.", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "No songs found in your library.",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                     Text(
                         "Try rescanning your library in settings if you have music on your device.",
                         style = MaterialTheme.typography.bodySmall,
@@ -1990,8 +1364,8 @@ fun LibrarySongsTabPaginated(
                 }
             }
         }
+
         else -> {
-            // Songs loaded - show paginated list
             Box(modifier = Modifier.fillMaxSize()) {
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
@@ -2009,6 +1383,598 @@ fun LibrarySongsTabPaginated(
                         )
                     }
                 ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
+                                .clip(
+                                    RoundedCornerShape(
+                                        topStart = 26.dp,
+                                        topEnd = 26.dp,
+                                        bottomStart = PlayerSheetCollapsedCornerRadius,
+                                        bottomEnd = PlayerSheetCollapsedCornerRadius
+                                    )
+                                ),
+                            state = listState,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + 30.dp)
+                        ) {
+                            item(key = "songs_top_spacer") { Spacer(Modifier.height(0.dp)) }
+                            items(
+                                count = paginatedSongs.itemCount,
+                                key = paginatedSongs.itemKey { "song_${it.id}" },
+                                contentType = paginatedSongs.itemContentType { "song" }
+                            ) { index ->
+                                val song = paginatedSongs[index]
+                                if (song != null) {
+                                    val isPlayingThisSong =
+                                        song.id == stablePlayerState.currentSong?.id && stablePlayerState.isPlaying
+
+                                    val rememberedOnMoreOptionsClick: (Song) -> Unit =
+                                        remember(onMoreOptionsClick) { { songFromListItem -> onMoreOptionsClick(songFromListItem) } }
+                                    val rememberedOnClick: () -> Unit =
+                                        remember(song) { { playerViewModel.showAndPlaySong(song) } }
+
+                                    EnhancedSongListItem(
+                                        song = song,
+                                        isPlaying = isPlayingThisSong,
+                                        isCurrentSong = stablePlayerState.currentSong?.id == song.id,
+                                        isLoading = false,
+                                        onMoreOptionsClick = rememberedOnMoreOptionsClick,
+                                        onClick = rememberedOnClick
+                                    )
+                                } else {
+                                    EnhancedSongListItem(
+                                        song = Song.emptySong(),
+                                        isPlaying = false,
+                                        isLoading = true,
+                                        isCurrentSong = false,
+                                        onMoreOptionsClick = {},
+                                        onClick = {}
+                                    )
+                                }
+                            }
+                            if (paginatedSongs.loadState.append is LoadState.Loading) {
+                                item {
+                                    Box(
+                                        Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        LoadingIndicator(modifier = Modifier.size(32.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                            AdaptiveScrollbar(state = listState)
+                        smoothnessAsPercentTR = 60,
+                        cornerRadiusTR = animatedCornerRadius,
+                        smoothnessAsPercentBR = 60,
+                        cornerRadiusBL = animatedCornerRadius,
+                        smoothnessAsPercentBL = 60,
+                        cornerRadiusBR = animatedCornerRadius,
+                        smoothnessAsPercentTL = 60
+                    )
+                }
+
+                val albumShape = remember(animatedCornerRadius) {
+                    AbsoluteSmoothCornerShape(
+                        cornerRadiusTL = animatedAlbumCornerRadius,
+                        smoothnessAsPercentTR = 60,
+                        cornerRadiusTR = animatedAlbumCornerRadius,
+                        smoothnessAsPercentBR = 60,
+                        cornerRadiusBL = animatedAlbumCornerRadius,
+                        smoothnessAsPercentBL = 60,
+                        cornerRadiusBR = animatedAlbumCornerRadius,
+                        smoothnessAsPercentTL = 60
+                    )
+                }
+
+                val colors = MaterialTheme.colorScheme
+                val containerColor =
+                    if ((isCurrentSong) && !isLoading) colors.primaryContainer else colors.surfaceContainerLow
+                val contentColor =
+                    if ((isCurrentSong) && !isLoading) colors.onPrimaryContainer else colors.onSurface
+
+                val mvContainerColor =
+                    if ((isCurrentSong) && !isLoading) colors.primaryContainer else colors.onSurface
+                val mvContentColor =
+                    if ((isCurrentSong) && !isLoading) colors.onPrimaryContainer else colors.surfaceContainerHigh
+
+                if (isLoading) {
+                    // Shimmer Placeholder Layout
+                    Surface(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .clip(surfaceShape),
+                        shape = surfaceShape,
+                        color = colors.surfaceContainerLow,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 13.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ShimmerBox(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 12.dp)
+                            ) {
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.7f)
+                                        .height(20.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.5f)
+                                        .height(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.3f)
+                                        .height(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            ShimmerBox(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                    }
+                } else {
+                    // Actual Song Item Layout
+                    var applyTextMarquee by remember { mutableStateOf(false) }
+
+                    Surface(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .clip(surfaceShape)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = { onClick() },
+                                    onLongPress = { applyTextMarquee = !applyTextMarquee },
+                                    onPress = {
+                                        try {
+                                            awaitRelease()
+                                        } finally {
+                                            applyTextMarquee = false
+                                        }
+                                    })
+                            },
+                        shape = surfaceShape,
+                        color = containerColor,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 13.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                            ) {
+                                // Usando tu composable SmartImage
+                                SmartImage(
+                                    model = song.albumArtUriString,
+                                    contentDescription = song.title,
+                                    shape = albumShape,
+                                    targetSize = Size(168, 168), // 56dp * 3 (para densidad xxhdpi)
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 14.dp)
+                            ) {
+                                if (applyTextMarquee) {
+                                    AutoScrollingTextOnDemand(
+                                        text = song.title,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        gradientEdgeColor = containerColor,
+                                        expansionFractionProvider = { 1f },
+                                    )
+
+                                } else {
+                                    Text(
+                                        text = song.title,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        color = contentColor,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = song.displayArtist,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = contentColor.copy(alpha = 0.7f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (isCurrentSong) {
+                                PlayingEqIcon(
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .size(width = 18.dp, height = 16.dp),
+                                    color = contentColor,
+                                    isPlaying = isPlaying
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            FilledIconButton(
+                                onClick = { onMoreOptionsClick(song) },
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = mvContentColor,
+                                    contentColor = mvContainerColor
+                                ),
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .padding(end = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = "More options for ${song.title}",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            @androidx.annotation.OptIn(UnstableApi::class)
+            @Composable
+            fun LibraryAlbumsTab(
+                albums: ImmutableList<Album>,
+                isLoading: Boolean,
+                playerViewModel: PlayerViewModel,
+                bottomBarHeight: Dp,
+                onAlbumClick: (Long) -> Unit,
+                isRefreshing: Boolean,
+                onRefresh: () -> Unit
+            ) {
+                val gridState = rememberLazyGridState()
+                val context = LocalContext.current
+                val imageLoader = context.imageLoader
+
+                // Prefetching logic for LibraryAlbumsTab
+                LaunchedEffect(albums, gridState) {
+                    snapshotFlow { gridState.layoutInfo }
+                        .distinctUntilChanged()
+                        .collect { layoutInfo ->
+                            val visibleItemsInfo = layoutInfo.visibleItemsInfo
+                            if (visibleItemsInfo.isNotEmpty() && albums.isNotEmpty()) {
+                                val lastVisibleItemIndex = visibleItemsInfo.last().index
+                                val totalItemsCount = albums.size
+                                val prefetchThreshold =
+                                    5 // Start prefetching when 5 items are left to be displayed from current visible ones
+                                val prefetchCount = 10 // Prefetch next 10 items
+
+                                if (totalItemsCount > lastVisibleItemIndex + 1 && lastVisibleItemIndex + prefetchThreshold >= totalItemsCount - prefetchCount) {
+                                    val startIndexToPrefetch = lastVisibleItemIndex + 1
+                                    val endIndexToPrefetch =
+                                        (startIndexToPrefetch + prefetchCount).coerceAtMost(totalItemsCount)
+
+                                    (startIndexToPrefetch until endIndexToPrefetch).forEach { indexToPrefetch ->
+                                        val album = albums.getOrNull(indexToPrefetch)
+                                        album?.albumArtUriString?.let { uri ->
+                                            val request = ImageRequest.Builder(context)
+                                                .data(uri)
+                                                .size(
+                                                    Size(
+                                                        256,
+                                                        256
+                                                    )
+                                                ) // Same size as in AlbumGridItemRedesigned
+                                                .build()
+                                            imageLoader.enqueue(request)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                }
+
+                if (isLoading && albums.isEmpty()) {
+                    // Show skeleton grid during loading
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        LazyVerticalGrid(
+                            modifier = Modifier
+                                .padding(start = 14.dp, end = 14.dp, bottom = 6.dp)
+                                .clip(
+                                    RoundedCornerShape(
+                                        topStart = 26.dp,
+                                        topEnd = 26.dp,
+                                        bottomStart = PlayerSheetCollapsedCornerRadius,
+                                        bottomEnd = PlayerSheetCollapsedCornerRadius
+                                    )
+                                )
+                                .fillMaxSize(),
+                            state = gridState,
+                            columns = GridCells.Fixed(2),
+                            contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap + 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            item(key = "skeleton_top_spacer", span = { GridItemSpan(maxLineSpan) }) {
+                                Spacer(Modifier.height(4.dp))
+                            }
+                            items(8) { // Show 8 skeleton items (4 rows x 2 columns)
+                                AlbumGridItemRedesigned(
+                                    album = Album.empty(),
+                                    albumColorSchemePairFlow = MutableStateFlow(null),
+                                    onClick = {},
+                                    isLoading = true
+                                )
+                            }
+                        }
+
+                        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                            AdaptiveScrollbar(state = gridState)
+                        }
+                    }
+                } else if (albums.isEmpty() && !isLoading) { /* ... No albums ... */
+                } // canLoadMore removed
+                else {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        val albumsPullToRefreshState = rememberPullToRefreshState()
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshing,
+                            onRefresh = onRefresh,
+                            state = albumsPullToRefreshState,
+                            modifier = Modifier.fillMaxSize(),
+                            indicator = {
+                                PullToRefreshDefaults.LoadingIndicator(
+                                    state = albumsPullToRefreshState,
+                                    isRefreshing = isRefreshing,
+                                    modifier = Modifier.align(Alignment.TopCenter)
+                                )
+                            }
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                LazyVerticalGrid(
+                                    modifier = Modifier
+                                        .padding(start = 14.dp, end = 14.dp, bottom = 6.dp)
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = 26.dp,
+                                                topEnd = 26.dp,
+                                                bottomStart = PlayerSheetCollapsedCornerRadius,
+                                                bottomEnd = PlayerSheetCollapsedCornerRadius
+                                            )
+                                        ),
+                                    state = gridState,
+                                    columns = GridCells.Fixed(2),
+                                    contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap + 4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    item(key = "albums_top_spacer", span = { GridItemSpan(maxLineSpan) }) {
+                                        Spacer(Modifier.height(4.dp))
+                                    }
+                                    items(albums, key = { "album_${it.id}" }) { album ->
+                                        val albumSpecificColorSchemeFlow =
+                                            playerViewModel.themeStateHolder.getAlbumColorSchemeFlow(
+                                                album.albumArtUriString ?: ""
+                                            )
+                                        val rememberedOnClick =
+                                            remember(album.id) { { onAlbumClick(album.id) } }
+                                        AlbumGridItemRedesigned(
+                                            album = album,
+                                            albumColorSchemePairFlow = albumSpecificColorSchemeFlow,
+                                            onClick = rememberedOnClick,
+                                            isLoading = isLoading && albums.isEmpty()
+                                        )
+                                    }
+                                }
+
+                                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                                    AdaptiveScrollbar(state = gridState)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Composable
+            fun AlbumGridItemRedesigned(
+                album: Album,
+                albumColorSchemePairFlow: StateFlow<ColorSchemePair?>,
+                onClick: () -> Unit,
+                isLoading: Boolean = false
+            ) {
+                val albumColorSchemePair by albumColorSchemePairFlow.collectAsState()
+                val systemIsDark = LocalPixelPlayDarkTheme.current
+
+                // 1. Obtén el colorScheme del tema actual aquí, en el scope Composable.
+                val currentMaterialColorScheme = MaterialTheme.colorScheme
+
+                val itemDesignColorScheme =
+                    remember(albumColorSchemePair, systemIsDark, currentMaterialColorScheme) {
+                        // 2. Ahora, currentMaterialColorScheme es una variable estable que puedes usar.
+                        albumColorSchemePair?.let { pair ->
+                            if (systemIsDark) pair.dark else pair.light
+                        } ?: currentMaterialColorScheme // Usa la variable capturada
+                    }
+
+                val gradientBaseColor = itemDesignColorScheme.primaryContainer
+                val onGradientColor = itemDesignColorScheme.onPrimaryContainer
+                val cardCornerRadius = 20.dp
+
+                if (isLoading) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(cardCornerRadius),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                alpha = 0.3f
+                            )
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(cardCornerRadius)
+                            )
+                        ) {
+                            ShimmerBox(
+                                modifier = Modifier
+                                    .aspectRatio(3f / 2f)
+                                    .fillMaxSize()
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                            ) {
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.8f)
+                                        .height(20.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.6f)
+                                        .height(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.4f)
+                                        .height(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Card(
+                        onClick = onClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(cardCornerRadius),
+                        //elevation = CardDefaults.cardElevation(defaultElevation = 4.dp, pressedElevation = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = itemDesignColorScheme.surfaceVariant.copy(
+                                alpha = 0.3f
+                            )
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.background(
+                                color = gradientBaseColor,
+                                shape = RoundedCornerShape(cardCornerRadius)
+                            )
+                        ) {
+                            Box(contentAlignment = Alignment.BottomStart) {
+                                var isLoadingImage by remember { mutableStateOf(true) }
+                                SmartImage(
+                                    model = album.albumArtUriString,
+                                    contentDescription = "Carátula de ${album.title}",
+                                    contentScale = ContentScale.Crop,
+                                    // Reducido el tamaño para mejorar el rendimiento del scroll, como se sugiere en el informe.
+                                    // ContentScale.Crop se encargará de ajustar la imagen al aspect ratio.
+                                    targetSize = Size(256, 256),
+                                    modifier = Modifier
+                                        .aspectRatio(3f / 2f)
+                                        .fillMaxSize(),
+                                    onState = { state ->
+                                        isLoadingImage = state is AsyncImagePainter.State.Loading
+                                    }
+                                )
+                                if (isLoadingImage) {
+                                    ShimmerBox(
+                                        modifier = Modifier
+                                            .aspectRatio(3f / 2f)
+                                            .fillMaxSize()
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .aspectRatio(3f / 2f)
+                                        .background(
+                                            remember(gradientBaseColor) { // Recordar el Brush
+                                                Brush.verticalGradient(
+                                                    colors = listOf(
+                                                        Color.Transparent, gradientBaseColor
+                                                    )
+                                                )
+                                            })
+                                )
+                            }
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                            ) {
+                                Text(
+                                    album.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = onGradientColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    album.artist,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = onGradientColor.copy(alpha = 0.85f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    "${album.songCount} Songs",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = onGradientColor.copy(alpha = 0.7f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            @androidx.annotation.OptIn(UnstableApi::class)
+            @Composable
+            fun LibraryArtistsTab(
+                artists: ImmutableList<Artist>,
+                isLoading: Boolean, // This now represents the loading state for all artists
+                // canLoadMore: Boolean, // Removed
+                playerViewModel: PlayerViewModel,
+                bottomBarHeight: Dp,
+                onArtistClick: (Long) -> Unit,
+                isRefreshing: Boolean,
+                onRefresh: () -> Unit
+            ) {
+                val listState = rememberLazyListState()
+                if (isLoading && artists.isEmpty()) {
+                    // Show skeleton list during loading
                     LazyColumn(
                         modifier = Modifier
                             .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
@@ -2019,681 +1985,78 @@ fun LibrarySongsTabPaginated(
                                     bottomStart = PlayerSheetCollapsedCornerRadius,
                                     bottomEnd = PlayerSheetCollapsedCornerRadius
                                 )
-                            ),
+                            )
+                            .fillMaxSize(),
                         state = listState,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + 30.dp)
+                        contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap)
                     ) {
-                        item(key = "songs_top_spacer") { Spacer(Modifier.height(0.dp)) }
-                        
-                        items(
-                            count = paginatedSongs.itemCount,
-                            key = paginatedSongs.itemKey { "song_${it.id}" },
-                            contentType = paginatedSongs.itemContentType { "song" }
-                        ) { index ->
-                            val song = paginatedSongs[index]
-                            if (song != null) {
-                                val isPlayingThisSong = song.id == stablePlayerState.currentSong?.id && stablePlayerState.isPlaying
-                                
-                                val rememberedOnMoreOptionsClick: (Song) -> Unit = remember(onMoreOptionsClick) {
-                                    { songFromListItem -> onMoreOptionsClick(songFromListItem) }
-                                }
-                                val rememberedOnClick: () -> Unit = remember(song) {
-                                    { playerViewModel.showAndPlaySong(song) }
-                                }
-                                
-                                EnhancedSongListItem(
-                                    song = song,
-                                    isPlaying = isPlayingThisSong,
-                                    isCurrentSong = stablePlayerState.currentSong?.id == song.id,
-                                    isLoading = false,
-                                    onMoreOptionsClick = rememberedOnMoreOptionsClick,
-                                    onClick = rememberedOnClick
-                                )
-                            } else {
-                                // Placeholder while loading
-                                EnhancedSongListItem(
-                                    song = Song.emptySong(),
-                                    isPlaying = false,
-                                    isLoading = true,
-                                    isCurrentSong = false,
-                                    onMoreOptionsClick = {},
-                                    onClick = {}
-                                )
-                            }
-                        }
-                        
-                        // Loading indicator for appending more items
-                        if (paginatedSongs.loadState.append is LoadState.Loading) {
-                            item {
-                                Box(
-                                    Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    LoadingIndicator(modifier = Modifier.size(32.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-                // Top gradient fade effect
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.surface, Color.Transparent
-                                )
+                        item(key = "skeleton_top_spacer") { Spacer(Modifier.height(4.dp)) }
+                        items(10) { // Show 10 skeleton items
+                            ArtistListItem(
+                                artist = Artist.empty(),
+                                onClick = {},
+                                isLoading = true
                             )
-                        )
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EnhancedSongListItem(
-    modifier: Modifier = Modifier,
-    song: Song,
-    isPlaying: Boolean,
-    isCurrentSong: Boolean = false,
-    isLoading: Boolean = false,
-    onMoreOptionsClick: (Song) -> Unit,
-    onClick: () -> Unit
-) {
-    // Animamos el radio de las esquinas basándonos en si la canción es la actual.
-    val animatedCornerRadius by animateDpAsState(
-        targetValue = if (isCurrentSong && !isLoading) 50.dp else 22.dp,
-        animationSpec = tween(durationMillis = 400),
-        label = "cornerRadiusAnimation"
-    )
-
-    val animatedAlbumCornerRadius by animateDpAsState(
-        targetValue = if (isCurrentSong && !isLoading) 50.dp else 12.dp,
-        animationSpec = tween(durationMillis = 400),
-        label = "cornerRadiusAnimation"
-    )
-
-    val surfaceShape = remember(animatedCornerRadius) {
-        AbsoluteSmoothCornerShape(
-            cornerRadiusTL = animatedCornerRadius,
-            smoothnessAsPercentTR = 60,
-            cornerRadiusTR = animatedCornerRadius,
-            smoothnessAsPercentBR = 60,
-            cornerRadiusBL = animatedCornerRadius,
-            smoothnessAsPercentBL = 60,
-            cornerRadiusBR = animatedCornerRadius,
-            smoothnessAsPercentTL = 60
-        )
-    }
-
-    val albumShape = remember(animatedCornerRadius) {
-        AbsoluteSmoothCornerShape(
-            cornerRadiusTL = animatedAlbumCornerRadius,
-            smoothnessAsPercentTR = 60,
-            cornerRadiusTR = animatedAlbumCornerRadius,
-            smoothnessAsPercentBR = 60,
-            cornerRadiusBL = animatedAlbumCornerRadius,
-            smoothnessAsPercentBL = 60,
-            cornerRadiusBR = animatedAlbumCornerRadius,
-            smoothnessAsPercentTL = 60
-        )
-    }
-
-    val colors = MaterialTheme.colorScheme
-    val containerColor = if ((isCurrentSong) && !isLoading) colors.primaryContainer else colors.surfaceContainerLow
-    val contentColor = if ((isCurrentSong) && !isLoading) colors.onPrimaryContainer else colors.onSurface
-
-    val mvContainerColor = if ((isCurrentSong) && !isLoading) colors.primaryContainer else colors.onSurface
-    val mvContentColor = if ((isCurrentSong) && !isLoading) colors.onPrimaryContainer else colors.surfaceContainerHigh
-
-    if (isLoading) {
-        // Shimmer Placeholder Layout
-        Surface(
-            modifier = modifier
-                .fillMaxWidth()
-                .clip(surfaceShape),
-            shape = surfaceShape,
-            color = colors.surfaceContainerLow,
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 13.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ShimmerBox(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                )
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 12.dp)
-                ) {
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .height(20.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .height(16.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.3f)
-                            .height(16.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                ShimmerBox(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                )
-            }
-        }
-    } else {
-        // Actual Song Item Layout
-        var applyTextMarquee by remember { mutableStateOf(false) }
-
-        Surface(
-            modifier = modifier
-                .fillMaxWidth()
-                .clip(surfaceShape)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = { onClick() },
-                        onLongPress = { applyTextMarquee = !applyTextMarquee },
-                        onPress = {
-                            try {
-                                awaitRelease()
-                            } finally {
-                                applyTextMarquee = false
-                            }
-                        })
-                },
-            shape = surfaceShape,
-            color = containerColor,
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 13.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                ) {
-                    // Usando tu composable SmartImage
-                    SmartImage(
-                        model = song.albumArtUriString,
-                        contentDescription = song.title,
-                        shape = albumShape,
-                        targetSize = Size(168, 168), // 56dp * 3 (para densidad xxhdpi)
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 14.dp)
-                ) {
-                    if (applyTextMarquee) {
-                        AutoScrollingTextOnDemand(
-                            text = song.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            gradientEdgeColor = containerColor,
-                            expansionFractionProvider = { 1f },
-                        )
-
-                    } else {
-                        Text(
-                            text = song.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            color = contentColor,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = song.displayArtist,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = contentColor.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                if (isCurrentSong) {
-                     PlayingEqIcon(
-                         modifier = Modifier
-                             .padding(start = 8.dp)
-                             .size(width = 18.dp, height = 16.dp),
-                         color = contentColor,
-                         isPlaying = isPlaying
-                     )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                FilledIconButton(
-                    onClick = { onMoreOptionsClick(song) },
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = mvContentColor,
-                        contentColor = mvContainerColor
-                    ),
-                    modifier = Modifier
-                        .size(36.dp)
-                        .padding(end = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "More options for ${song.title}",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@androidx.annotation.OptIn(UnstableApi::class)
-@Composable
-fun LibraryAlbumsTab(
-    albums: ImmutableList<Album>,
-    isLoading: Boolean,
-    playerViewModel: PlayerViewModel,
-    bottomBarHeight: Dp,
-    onAlbumClick: (Long) -> Unit,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
-) {
-    val gridState = rememberLazyGridState()
-    val context = LocalContext.current
-    val imageLoader = context.imageLoader
-
-    // Prefetching logic for LibraryAlbumsTab
-    LaunchedEffect(albums, gridState) {
-        snapshotFlow { gridState.layoutInfo }
-            .distinctUntilChanged()
-            .collect { layoutInfo ->
-                val visibleItemsInfo = layoutInfo.visibleItemsInfo
-                if (visibleItemsInfo.isNotEmpty() && albums.isNotEmpty()) {
-                    val lastVisibleItemIndex = visibleItemsInfo.last().index
-                    val totalItemsCount = albums.size
-                    val prefetchThreshold = 5 // Start prefetching when 5 items are left to be displayed from current visible ones
-                    val prefetchCount = 10 // Prefetch next 10 items
-
-                    if (totalItemsCount > lastVisibleItemIndex + 1 && lastVisibleItemIndex + prefetchThreshold >= totalItemsCount - prefetchCount) {
-                        val startIndexToPrefetch = lastVisibleItemIndex + 1
-                        val endIndexToPrefetch = (startIndexToPrefetch + prefetchCount).coerceAtMost(totalItemsCount)
-
-                        (startIndexToPrefetch until endIndexToPrefetch).forEach { indexToPrefetch ->
-                            val album = albums.getOrNull(indexToPrefetch)
-                            album?.albumArtUriString?.let { uri ->
-                                val request = ImageRequest.Builder(context)
-                                    .data(uri)
-                                    .size(Size(256, 256)) // Same size as in AlbumGridItemRedesigned
-                                    .build()
-                                imageLoader.enqueue(request)
-                            }
                         }
                     }
-                }
-            }
-    }
-
-    if (isLoading && albums.isEmpty()) {
-        // Show skeleton grid during loading
-        LazyVerticalGrid(
-            modifier = Modifier
-                .padding(start = 14.dp, end = 14.dp, bottom = 6.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 26.dp,
-                        topEnd = 26.dp,
-                        bottomStart = PlayerSheetCollapsedCornerRadius,
-                        bottomEnd = PlayerSheetCollapsedCornerRadius
-                    )
-                )
-                .fillMaxSize(),
-            state = gridState,
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap + 4.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            item(key = "skeleton_top_spacer", span = { GridItemSpan(maxLineSpan) }) {
-                Spacer(Modifier.height(4.dp))
-            }
-            items(8) { // Show 8 skeleton items (4 rows x 2 columns)
-                AlbumGridItemRedesigned(
-                    album = Album.empty(),
-                    albumColorSchemePairFlow = MutableStateFlow(null),
-                    onClick = {},
-                    isLoading = true
-                )
-            }
-        }
-    } else if (albums.isEmpty() && !isLoading) { // canLoadMore removed
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Filled.Album, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                Text("No albums found.", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    } else {
-        Box(modifier = Modifier.fillMaxSize()) {
-            val albumsPullToRefreshState = rememberPullToRefreshState()
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                state = albumsPullToRefreshState,
-                modifier = Modifier.fillMaxSize(),
-                indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(
-                        state = albumsPullToRefreshState,
-                        isRefreshing = isRefreshing,
-                        modifier = Modifier.align(Alignment.TopCenter)
-                    )
-                }
-            ) {
-                LazyVerticalGrid(
-                    modifier = Modifier
-                        .padding(start = 14.dp, end = 14.dp, bottom = 6.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = 26.dp,
-                                topEnd = 26.dp,
-                                bottomStart = PlayerSheetCollapsedCornerRadius,
-                                bottomEnd = PlayerSheetCollapsedCornerRadius
-                            )
-                        ),
-                    state = gridState,
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap + 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    item(key = "albums_top_spacer", span = { GridItemSpan(maxLineSpan) }) {
-                        Spacer(Modifier.height(4.dp))
-                    }
-                    items(albums, key = { "album_${it.id}" }) { album ->
-                        val albumSpecificColorSchemeFlow =
-                            playerViewModel.themeStateHolder.getAlbumColorSchemeFlow(album.albumArtUriString ?: "")
-                        val rememberedOnClick = remember(album.id) { { onAlbumClick(album.id) } }
-                        AlbumGridItemRedesigned(
-                            album = album,
-                            albumColorSchemePairFlow = albumSpecificColorSchemeFlow,
-                            onClick = rememberedOnClick,
-                            isLoading = isLoading && albums.isEmpty() // Shimmer solo si está cargando Y la lista está vacía
-                        )
-                    }
-                }
-            }
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(14.dp)
-//                    .background(
-//                        brush = Brush.verticalGradient(
-//                            colors = listOf(MaterialTheme.colorScheme.surface, Color.Transparent)
-//                        )
-//                    )
-//                    .align(Alignment.TopCenter)
-//            )
-        }
-    }
-}
-
-@Composable
-fun AlbumGridItemRedesigned(
-    album: Album,
-    albumColorSchemePairFlow: StateFlow<ColorSchemePair?>,
-    onClick: () -> Unit,
-    isLoading: Boolean = false
-) {
-    val albumColorSchemePair by albumColorSchemePairFlow.collectAsState()
-    val systemIsDark = LocalPixelPlayDarkTheme.current
-
-    // 1. Obtén el colorScheme del tema actual aquí, en el scope Composable.
-    val currentMaterialColorScheme = MaterialTheme.colorScheme
-
-    val itemDesignColorScheme = remember(albumColorSchemePair, systemIsDark, currentMaterialColorScheme) {
-        // 2. Ahora, currentMaterialColorScheme es una variable estable que puedes usar.
-        albumColorSchemePair?.let { pair ->
-            if (systemIsDark) pair.dark else pair.light
-        } ?: currentMaterialColorScheme // Usa la variable capturada
-    }
-
-    val gradientBaseColor = itemDesignColorScheme.primaryContainer
-    val onGradientColor = itemDesignColorScheme.onPrimaryContainer
-    val cardCornerRadius = 20.dp
-
-    if (isLoading) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(cardCornerRadius),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-        ) {
-            Column(
-                modifier = Modifier.background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(cardCornerRadius)
-                )
-            ) {
-                ShimmerBox(
-                    modifier = Modifier
-                        .aspectRatio(3f / 2f)
-                        .fillMaxSize()
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                ) {
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(20.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .height(16.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.4f)
-                            .height(16.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                }
-            }
-        }
-    } else {
-        Card(
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(cardCornerRadius),
-            //elevation = CardDefaults.cardElevation(defaultElevation = 4.dp, pressedElevation = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = itemDesignColorScheme.surfaceVariant.copy(alpha = 0.3f))
-        ) {
-            Column(
-                modifier = Modifier.background(
-                    color = gradientBaseColor,
-                    shape = RoundedCornerShape(cardCornerRadius)
-                )
-            ) {
-                Box(contentAlignment = Alignment.BottomStart) {
-                    var isLoadingImage by remember { mutableStateOf(true) }
-                    SmartImage(
-                        model = album.albumArtUriString,
-                        contentDescription = "Carátula de ${album.title}",
-                        contentScale = ContentScale.Crop,
-                            // Reducido el tamaño para mejorar el rendimiento del scroll, como se sugiere en el informe.
-                            // ContentScale.Crop se encargará de ajustar la imagen al aspect ratio.
-                            targetSize = Size(256, 256),
-                        modifier = Modifier
-                            .aspectRatio(3f / 2f)
-                            .fillMaxSize(),
-                        onState = { state ->
-                            isLoadingImage = state is AsyncImagePainter.State.Loading
-                        }
-                    )
-                    if (isLoadingImage) {
-                        ShimmerBox(
-                            modifier = Modifier
-                                .aspectRatio(3f / 2f)
-                                .fillMaxSize()
-                        )
-                    }
+                } else if (artists.isEmpty() && !isLoading) { /* ... No artists ... */
+                } // canLoadMore removed
+                else {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .aspectRatio(3f / 2f)
-                            .background(
-                                remember(gradientBaseColor) { // Recordar el Brush
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Transparent, gradientBaseColor
-                                        )
-                                    )
-                                })
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        album.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = onGradientColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(album.artist, style = MaterialTheme.typography.bodySmall, color = onGradientColor.copy(alpha = 0.85f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("${album.songCount} Songs", style = MaterialTheme.typography.bodySmall, color = onGradientColor.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-        }
-    }
-}
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val genresPullToRefreshState = rememberPullToRefreshState()
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshing,
+                            onRefresh = onRefresh,
+                            state = genresPullToRefreshState,
+                            modifier = Modifier.fillMaxSize(),
+                            indicator = {
+                                PullToRefreshDefaults.LoadingIndicator(
+                                    state = genresPullToRefreshState,
+                                    isRefreshing = isRefreshing,
+                                    modifier = Modifier.align(Alignment.TopCenter)
+                                )
+                            }
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = 26.dp,
+                                                topEnd = 26.dp,
+                                                bottomStart = PlayerSheetCollapsedCornerRadius,
+                                                bottomEnd = PlayerSheetCollapsedCornerRadius
+                                            )
+                                        ),
+                                    state = listState,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap)
+                                ) {
+                                    item(key = "artists_top_spacer") {
+                                        Spacer(Modifier.height(4.dp))
+                                    }
+                                    items(artists, key = { "artist_${it.id}" }) { artist ->
+                                        val rememberedOnClick =
+                                            remember(artist) { { onArtistClick(artist.id) } }
+                                        ArtistListItem(artist = artist, onClick = rememberedOnClick)
+                                    }
+                                    // "Load more" indicator removed as all artists are loaded at once
+                                    // if (isLoading && artists.isNotEmpty()) {
+                                    //     item { Box(Modifier
+                                    //         .fillMaxWidth()
+                                    //         .padding(16.dp), Alignment.Center) { CircularProgressIndicator() } }
+                                    // }
+                                }
 
-@androidx.annotation.OptIn(UnstableApi::class)
-@Composable
-fun LibraryArtistsTab(
-    artists: ImmutableList<Artist>,
-    isLoading: Boolean, // This now represents the loading state for all artists
-    // canLoadMore: Boolean, // Removed
-    playerViewModel: PlayerViewModel,
-    bottomBarHeight: Dp,
-    onArtistClick: (Long) -> Unit,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
-) {
-    val listState = rememberLazyListState()
-    if (isLoading && artists.isEmpty()) {
-        // Show skeleton list during loading
-        LazyColumn(
-            modifier = Modifier
-                .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 26.dp,
-                        topEnd = 26.dp,
-                        bottomStart = PlayerSheetCollapsedCornerRadius,
-                        bottomEnd = PlayerSheetCollapsedCornerRadius
-                    )
-                )
-                .fillMaxSize(),
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap)
-        ) {
-            item(key = "skeleton_top_spacer") { Spacer(Modifier.height(4.dp)) }
-            items(10) { // Show 10 skeleton items
-                ArtistListItem(
-                    artist = Artist.empty(),
-                    onClick = {},
-                    isLoading = true
-                )
-            }
-        }
-    }
-    else if (artists.isEmpty() && !isLoading) { /* ... No artists ... */ } // canLoadMore removed
-    else {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            val genresPullToRefreshState = rememberPullToRefreshState()
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                state = genresPullToRefreshState,
-                modifier = Modifier.fillMaxSize(),
-                indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(
-                        state = genresPullToRefreshState,
-                        isRefreshing = isRefreshing,
-                        modifier = Modifier.align(Alignment.TopCenter)
-                    )
-                }
-            ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .padding(start = 12.dp, end = 12.dp, bottom = 6.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = 26.dp,
-                                topEnd = 26.dp,
-                                bottomStart = PlayerSheetCollapsedCornerRadius,
-                                bottomEnd = PlayerSheetCollapsedCornerRadius
-                            )
-                        ),
-                    state = listState,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = bottomBarHeight + MiniPlayerHeight + ListExtraBottomGap)
-                ) {
-                    item(key = "artists_top_spacer") {
-                        Spacer(Modifier.height(4.dp))
-                    }
-                    items(artists, key = { "artist_${it.id}" }) { artist ->
-                        val rememberedOnClick = remember(artist) { { onArtistClick(artist.id) } }
-                        ArtistListItem(artist = artist, onClick = rememberedOnClick)
-                    }
-                    // "Load more" indicator removed as all artists are loaded at once
-                    // if (isLoading && artists.isNotEmpty()) {
-                    //     item { Box(Modifier
-                    //         .fillMaxWidth()
-                    //         .padding(16.dp), Alignment.Center) { CircularProgressIndicator() } }
-                    // }
-                }
-            }
+                                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                                    AdaptiveScrollbar(state = listState)
+                                }
+                            }
+                        }
 //            Box(
 //                modifier = Modifier
 //                    .fillMaxWidth()
@@ -2705,97 +2068,109 @@ fun LibraryArtistsTab(
 //                    )
 //                    .align(Alignment.TopCenter)
 //            )
-        }
-    }
-}
-
-@Composable
-fun ArtistListItem(artist: Artist, onClick: () -> Unit, isLoading: Boolean = false) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
-    ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (isLoading) {
-                // Skeleton loading state
-                ShimmerBox(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .height(20.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    ShimmerBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.3f)
-                            .height(16.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (!artist.imageUrl.isNullOrEmpty()) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(artist.imageUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = artist.name,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(R.drawable.rounded_artist_24),
-                            contentDescription = "Artista",
-                            modifier = Modifier.padding(8.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
                     }
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(artist.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("${artist.songCount} Songs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            @Composable
+            fun ArtistListItem(artist: Artist, onClick: () -> Unit, isLoading: Boolean = false) {
+                Card(
+                    onClick = onClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isLoading) {
+                            // Skeleton loading state
+                            ShimmerBox(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.6f)
+                                        .height(20.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                ShimmerBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.3f)
+                                        .height(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (!artist.imageUrl.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(artist.imageUrl)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = artist.name,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(R.drawable.rounded_artist_24),
+                                        contentDescription = "Artista",
+                                        modifier = Modifier.padding(8.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    artist.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "${artist.songCount} Songs",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
             }
-        }
-    }
-}
+            @androidx.annotation.OptIn(UnstableApi::class)
+            @Composable
+            fun LibraryPlaylistsTab(
+                playlistUiState: PlaylistUiState,
+                navController: NavController,
+                playerViewModel: PlayerViewModel,
+                bottomBarHeight: Dp,
+                onGenerateWithAiClick: () -> Unit,
+                isRefreshing: Boolean,
+                onRefresh: () -> Unit
+            ) {
+                PlaylistContainer(
+                    playlistUiState = playlistUiState,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    bottomBarHeight = bottomBarHeight,
+                    navController = navController,
+                    playerViewModel = playerViewModel,
+                )
+            }
 
-@androidx.annotation.OptIn(UnstableApi::class)
-@Composable
-fun LibraryPlaylistsTab(
-    playlistUiState: PlaylistUiState,
-    navController: NavController,
-    playerViewModel: PlayerViewModel,
-    bottomBarHeight: Dp,
-    onGenerateWithAiClick: () -> Unit,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
-) {
-    PlaylistContainer(
-        playlistUiState = playlistUiState,
-        isRefreshing = isRefreshing,
-        onRefresh = onRefresh,
-        bottomBarHeight = bottomBarHeight,
-        navController = navController,
-        playerViewModel = playerViewModel,
-    )
-}
+
