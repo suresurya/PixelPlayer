@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -95,6 +96,41 @@ fun AdaptiveScrollbar(
         firstVisibleItemIndexProvider = { state.firstVisibleItemIndex },
         firstVisibleItemScrollOffsetProvider = { state.firstVisibleItemScrollOffset },
         scrollToItem = { index, offset -> state.scrollToItem(index, offset) }
+    )
+}
+
+@Composable
+fun AdaptiveScrollbar(
+    state: ScrollState,
+    modifier: Modifier = Modifier,
+    thickness: Dp = 4.dp,
+    touchTargetWidth: Dp = 22.dp,
+    minThumbHeight: Dp = 36.dp,
+    contentPaddingEnd: Dp = 6.dp
+) {
+    AdaptiveScrollbarInternal(
+        modifier = modifier,
+        thickness = thickness,
+        touchTargetWidth = touchTargetWidth,
+        minThumbHeight = minThumbHeight,
+        contentPaddingEnd = contentPaddingEnd,
+        isScrollInProgress = { state.isScrollInProgress },
+        totalItemsCount = { if (state.maxValue > 0) 100 else 0 },
+        visibleItemsInfoProvider = {
+            if (state.maxValue > 0) {
+                // Approximate "visible items" for a single scrollable container
+                val viewportHeight = state.maxValue.toFloat()
+                val visibleFraction = 1f / (1f + state.maxValue.toFloat() / 500f) // Arbitrary viewport height approximation
+                listOf(0 to 500) // Mock item size
+            } else emptyList()
+        },
+        firstVisibleItemIndexProvider = { 
+            if (state.maxValue > 0) (state.value.toFloat() / state.maxValue * 100).toInt().coerceIn(0, 99) else 0
+        },
+        firstVisibleItemScrollOffsetProvider = { 0 },
+        scrollToItem = { index, _ -> 
+            state.scrollTo((index.toFloat() / 100f * state.maxValue).toInt())
+        }
     )
 }
 

@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.theveloper.pixelplay.R
+import com.theveloper.pixelplay.presentation.components.AdaptiveScrollbar
 import com.theveloper.pixelplay.presentation.components.ExpressiveTopBarContent
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight
 import com.theveloper.pixelplay.presentation.model.SettingsCategory
@@ -299,6 +300,11 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+
+        AdaptiveScrollbar(
+            state = lazyListState,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
         SettingsTopBar(
                 collapseFraction = collapseFraction,
                 headerHeight = currentTopBarHeightDp,

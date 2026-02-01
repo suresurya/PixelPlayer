@@ -67,6 +67,7 @@ import com.theveloper.pixelplay.presentation.components.GenreGradientTopBar
 // import com.theveloper.pixelplay.presentation.screens.ExpressiveSongListItem // Path might vary
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight // For MiniPlayerHeight if needed for padding
 import com.theveloper.pixelplay.presentation.components.SmartImage // For a simple song item
+import com.theveloper.pixelplay.presentation.components.AdaptiveScrollbar
 import com.theveloper.pixelplay.presentation.viewmodel.GenreDetailViewModel
 import com.theveloper.pixelplay.presentation.viewmodel.GroupedSongListItem // Import the new sealed interface
 import com.theveloper.pixelplay.presentation.viewmodel.PlayerSheetState
@@ -231,9 +232,10 @@ fun GenreDetailScreen(
                                 }
                             }
                         }
-                        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-                            AdaptiveScrollbar(state = listState)
-                        }
+                    }
+                    Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                        AdaptiveScrollbar(state = listState)
+                    }
                     }
                 }
             }
@@ -566,6 +568,4 @@ private fun SquareSongCard(
             }
         }
     }
-}
-
 }

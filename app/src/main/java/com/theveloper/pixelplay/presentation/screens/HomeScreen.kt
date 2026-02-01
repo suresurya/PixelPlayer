@@ -48,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import com.theveloper.pixelplay.presentation.components.AdaptiveScrollbar
 import com.theveloper.pixelplay.presentation.components.BetaInfoBottomSheet
 import com.theveloper.pixelplay.presentation.components.ChangelogBottomSheet
 import androidx.compose.ui.Modifier
@@ -171,19 +172,21 @@ fun HomeScreen(
                 )
             }
         ) { innerPadding ->
-            LazyColumn(
-                state = rememberLazyListState(),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentPadding = PaddingValues(
-                    top = innerPadding.calculateTopPadding(),
-                    bottom = paddingValuesParent.calculateBottomPadding()
-                            + 38.dp + bottomPadding
-                ),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                // Your Mix
+            val listState = rememberLazyListState()
+            Box(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentPadding = PaddingValues(
+                        top = innerPadding.calculateTopPadding(),
+                        bottom = paddingValuesParent.calculateBottomPadding()
+                                + 38.dp + bottomPadding
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    // Your Mix
                 item(key = "your_mix_header") {
                     YourMixHeader(
                         song = yourMixSong,
@@ -234,7 +237,13 @@ fun HomeScreen(
                     )
                 }
             }
+            Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                AdaptiveScrollbar(
+                    state = rememberLazyListState()
+                )
+            }
         }
+    }
         Box(
             modifier = Modifier
                 .fillMaxWidth()

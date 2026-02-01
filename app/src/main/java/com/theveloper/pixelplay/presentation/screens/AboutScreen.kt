@@ -65,6 +65,7 @@ import coil.request.ImageRequest
 import coil.size.Size
 import com.theveloper.pixelplay.R
 import com.theveloper.pixelplay.data.github.GitHubContributorService
+import com.theveloper.pixelplay.presentation.components.AdaptiveScrollbar
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight
 import com.theveloper.pixelplay.presentation.components.SmartImage
 import com.theveloper.pixelplay.presentation.components.brickbreaker.BrickBreakerOverlay
@@ -436,6 +437,11 @@ fun AboutScreen(
                 }
             }
         }
+
+        AdaptiveScrollbar(
+            state = lazyListState,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
         AboutTopBar(
             collapseFraction = collapseFraction,
             headerHeight = currentTopBarHeightDp,

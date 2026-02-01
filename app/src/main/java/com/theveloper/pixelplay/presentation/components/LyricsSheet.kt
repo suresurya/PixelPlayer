@@ -2,32 +2,17 @@ package com.theveloper.pixelplay.presentation.components
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.AnimationState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateTo
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ClearAll
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -48,23 +33,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.theveloper.pixelplay.R
-import com.theveloper.pixelplay.data.model.Lyrics
-import com.theveloper.pixelplay.data.model.SyncedLine
-import com.theveloper.pixelplay.data.model.SyncedWord
+import com.theveloper.pixelplay.data.model.*
 import com.theveloper.pixelplay.data.repository.LyricsSearchResult
 import com.theveloper.pixelplay.presentation.screens.TabAnimation
+import com.theveloper.pixelplay.presentation.components.AdaptiveScrollbar
 import com.theveloper.pixelplay.presentation.components.subcomps.FetchLyricsDialog
 import com.theveloper.pixelplay.presentation.components.subcomps.PlayerSeekBar
-import com.theveloper.pixelplay.presentation.viewmodel.LyricsSearchUiState
-import com.theveloper.pixelplay.presentation.viewmodel.PlayerUiState
-import com.theveloper.pixelplay.presentation.viewmodel.StablePlayerState
+import com.theveloper.pixelplay.presentation.viewmodel.*
 import com.theveloper.pixelplay.ui.theme.GoogleSansRounded
 import com.theveloper.pixelplay.utils.BubblesLine
 import com.theveloper.pixelplay.utils.ProviderText
-import com.theveloper.pixelplay.presentation.components.snapping.ExperimentalSnapperApi
-import com.theveloper.pixelplay.presentation.components.snapping.SnapperLayoutInfo
-import com.theveloper.pixelplay.presentation.components.snapping.rememberLazyListSnapperLayoutInfo
-import com.theveloper.pixelplay.presentation.components.snapping.rememberSnapperFlingBehavior
+import com.theveloper.pixelplay.presentation.components.snapping.*
 import com.theveloper.pixelplay.utils.LyricsUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,10 +52,6 @@ import racra.compose.smooth_corner_rect_library.AbsoluteSmoothCornerShape
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.HorizontalDivider
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -666,6 +641,7 @@ fun LyricsSheet(
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
+                        AdaptiveScrollbar(state = staticListState, modifier = Modifier.align(Alignment.CenterEnd))
                     }
                 }
             }
@@ -813,19 +789,7 @@ fun SyncedLyricsList(
                 }
                 footer()
             }
-
-//            if (metrics.zoneHeight > 0.dp) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .offset(y = metrics.topPadding)
-//                        .height(metrics.zoneHeight)
-//                        .align(Alignment.TopCenter)
-//                        .clip(RoundedCornerShape(18.dp))
-//                        .background(accentColor.copy(alpha = 0.12f))
-//                        .testTag("synced_highlight_zone")
-//                )
-//            }
+            AdaptiveScrollbar(state = listState, modifier = Modifier.align(Alignment.CenterEnd))
         }
     }
 }

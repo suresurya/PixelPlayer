@@ -99,6 +99,10 @@ import com.theveloper.pixelplay.presentation.components.NavBarContentHeight
 import com.theveloper.pixelplay.presentation.components.PlaylistBottomSheet
 import com.theveloper.pixelplay.presentation.navigation.Screen // Required for Screen.GenreDetail.createRoute
 import com.theveloper.pixelplay.presentation.screens.search.components.GenreCategoriesGrid
+import com.theveloper.pixelplay.presentation.screens.search.SearchResultAlbumItem
+import com.theveloper.pixelplay.presentation.screens.search.SearchResultArtistItem
+import com.theveloper.pixelplay.presentation.screens.search.SearchResultPlaylistItem
+import com.theveloper.pixelplay.presentation.screens.search.SearchFilterChip
 import com.theveloper.pixelplay.presentation.viewmodel.PlaylistViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.first
@@ -818,9 +822,14 @@ fun SearchResultsList(
                     }
                 }
             }
-        }
-        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-            AdaptiveScrollbar(state = listState)
+            item {
+                Box(modifier = Modifier.fillMaxWidth().height(100.dp)) { }
+            }
+            item {
+                Box(modifier = Modifier.fillMaxWidth().height(100.dp)) { 
+                    AdaptiveScrollbar(state = listState)
+                }
+            }
         }
     }
 }
