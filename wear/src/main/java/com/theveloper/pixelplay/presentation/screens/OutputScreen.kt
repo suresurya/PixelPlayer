@@ -36,6 +36,7 @@ import com.theveloper.pixelplay.presentation.components.WearTopTimeText
 import com.theveloper.pixelplay.presentation.theme.LocalWearPalette
 import com.theveloper.pixelplay.presentation.theme.screenBackgroundColor
 import com.theveloper.pixelplay.presentation.theme.surfaceContainerColor
+import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighestColor
 import com.theveloper.pixelplay.presentation.viewmodel.WearPlayerViewModel
 
 @Composable
@@ -131,17 +132,17 @@ private fun OutputTargetChip(
 ) {
     val palette = LocalWearPalette.current
     val containerColor = when {
-        !enabled -> palette.controlDisabledContainer
+        !enabled -> palette.surfaceContainerHighestColor()
         selected -> palette.controlContainer.copy(alpha = 0.95f)
         else -> palette.surfaceContainerColor()
     }
     val contentColor = when {
-        !enabled -> palette.controlDisabledContent
+        !enabled -> palette.textSecondary
         selected -> palette.controlContent
         else -> palette.textPrimary
     }
     val secondaryColor = when {
-        !enabled -> palette.controlDisabledContent.copy(alpha = 0.90f)
+        !enabled -> palette.textSecondary.copy(alpha = 0.82f)
         selected -> palette.controlContent.copy(alpha = 0.76f)
         else -> palette.textSecondary.copy(alpha = 0.80f)
     }

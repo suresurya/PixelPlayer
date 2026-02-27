@@ -103,6 +103,8 @@ import com.theveloper.pixelplay.presentation.components.WearTopTimeText
 import com.theveloper.pixelplay.presentation.shapes.RoundedStarShape
 import com.theveloper.pixelplay.presentation.theme.LocalWearPalette
 import com.theveloper.pixelplay.presentation.theme.radialBackgroundBrush
+import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighColor
+import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighestColor
 import com.theveloper.pixelplay.presentation.viewmodel.WearPlayerViewModel
 import com.theveloper.pixelplay.shared.WearPlayerState
 import androidx.core.graphics.ColorUtils
@@ -1333,7 +1335,9 @@ private fun UtilityPage(
     onOutputClick: () -> Unit,
 ) {
     BoxWithConstraints(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
     ) {
         val maxSafeWidth = maxWidth - 10.dp
         val middleWidth = (maxWidth * 0.84f).let { width ->
@@ -1390,8 +1394,8 @@ private fun UtilityPillButton(
     onClick: () -> Unit,
 ) {
     val palette = LocalWearPalette.current
-    val container = if (enabled) palette.chipContainer else palette.controlDisabledContainer
-    val tint = if (enabled) palette.chipContent else palette.controlDisabledContent
+    val container = if (enabled) palette.surfaceContainerHighColor() else palette.surfaceContainerHighestColor()
+    val tint = if (enabled) palette.chipContent else palette.textSecondary
 
     Row(
         modifier = Modifier

@@ -44,6 +44,7 @@ import com.theveloper.pixelplay.presentation.theme.LocalWearPalette
 import com.theveloper.pixelplay.presentation.theme.screenBackgroundColor
 import com.theveloper.pixelplay.presentation.theme.surfaceContainerColor
 import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighColor
+import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighestColor
 import com.theveloper.pixelplay.shared.WearBrowseRequest
 import com.theveloper.pixelplay.shared.WearLibraryItem
 import androidx.compose.material.icons.Icons
@@ -169,7 +170,7 @@ fun SongListScreen(
                             },
                             onClick = { viewModel.refresh() },
                             colors = ChipDefaults.chipColors(
-                                backgroundColor = palette.chipContainer,
+                                backgroundColor = palette.surfaceContainerColor(),
                                 contentColor = palette.chipContent,
                             ),
                             modifier = Modifier
@@ -472,7 +473,7 @@ private fun SongActionScreen(
     val playNextColor = palette.repeatActive.copy(alpha = 0.38f)
     val addToQueueColor = palette.surfaceContainerHighColor()
     val saveToWatchColor = if (!canSaveToWatch || isDownloaded || isTransferring) {
-        palette.controlDisabledContainer
+        palette.surfaceContainerHighestColor()
     } else {
         palette.favoriteActive.copy(alpha = 0.40f)
     }
@@ -684,7 +685,7 @@ private fun SongActionChip(
     val contentColor = if (enabled) {
         if (backgroundColor.luminance() > 0.46f) Color.Black.copy(alpha = 0.86f) else palette.textPrimary
     } else {
-        palette.controlDisabledContent
+        palette.textSecondary
     }
 
     Chip(
@@ -706,7 +707,7 @@ private fun SongActionChip(
         enabled = enabled,
         colors = ChipDefaults.chipColors(
             backgroundColor = if (enabled) backgroundColor
-            else palette.controlDisabledContainer,
+            else palette.surfaceContainerHighestColor(),
             contentColor = contentColor,
         ),
         modifier = Modifier.fillMaxWidth(),

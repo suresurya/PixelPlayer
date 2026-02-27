@@ -45,6 +45,7 @@ import com.theveloper.pixelplay.presentation.theme.LocalWearPalette
 import com.theveloper.pixelplay.presentation.theme.screenBackgroundColor
 import com.theveloper.pixelplay.presentation.theme.surfaceContainerColor
 import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighColor
+import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighestColor
 import com.theveloper.pixelplay.presentation.viewmodel.BrowseUiState
 import com.theveloper.pixelplay.presentation.viewmodel.WearBrowseViewModel
 import com.theveloper.pixelplay.presentation.viewmodel.WearPlayerViewModel
@@ -310,7 +311,7 @@ private fun QueueShortcutButton(
     val palette = LocalWearPalette.current
     val container by animateColorAsState(
         targetValue = when {
-            !enabled -> palette.controlDisabledContainer
+            !enabled -> palette.surfaceContainerHighestColor()
             active -> activeColor.copy(alpha = 0.86f)
             else -> palette.surfaceContainerColor()
         },
@@ -319,7 +320,7 @@ private fun QueueShortcutButton(
     )
     val tint by animateColorAsState(
         targetValue = when {
-            !enabled -> palette.controlDisabledContent
+            !enabled -> palette.textSecondary
             active -> if (activeColor.luminance() > 0.52f) Color.Black else Color.White
             else -> palette.chipContent
         },

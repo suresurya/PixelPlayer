@@ -23,6 +23,11 @@ data class WearPalette(
     val gradientTop: Color,
     val gradientMiddle: Color,
     val gradientBottom: Color,
+    val surfaceContainerLowest: Color,
+    val surfaceContainerLow: Color,
+    val surfaceContainer: Color,
+    val surfaceContainerHigh: Color,
+    val surfaceContainerHighest: Color,
     val textPrimary: Color,
     val textSecondary: Color,
     val textError: Color,
@@ -37,20 +42,23 @@ data class WearPalette(
     val repeatActive: Color,
 )
 
-private val DefaultDisabledContainer = Color(0xFF5B516D)
-
 private val DefaultWearPalette = WearPalette(
     gradientTop = Color(0xFF6C3AD8),
     gradientMiddle = Color(0xFF2C1858),
     gradientBottom = Color(0xFF130B23),
+    surfaceContainerLowest = Color(0xFF171224),
+    surfaceContainerLow = Color(0xFF211A30),
+    surfaceContainer = Color(0xFF2A2140),
+    surfaceContainerHigh = Color(0xFF33274D),
+    surfaceContainerHighest = Color(0xFF3D2E5B),
     textPrimary = Color(0xFFF4EEFF),
     textSecondary = Color(0xFFE1D5FF),
     textError = Color(0xFFFFB7C5),
     controlContainer = Color(0xFFE6DBFF).copy(alpha = 0.95f),
     controlContent = Color(0xFF2C0C62),
-    controlDisabledContainer = DefaultDisabledContainer,
-    controlDisabledContent = bestContrastContent(DefaultDisabledContainer),
-    chipContainer = Color(0xFF2D243F).copy(alpha = 0.94f),
+    controlDisabledContainer = Color(0xFF3D2E5B),
+    controlDisabledContent = bestContrastContent(Color(0xFF3D2E5B)),
+    chipContainer = Color(0xFF2A2140),
     chipContent = Color(0xFFE8E0FF),
     favoriteActive = Color(0xFFF1608E),
     shuffleActive = Color(0xFF44CDC4),
@@ -68,9 +76,12 @@ fun WearPalette.radialBackgroundBrush(): Brush = Brush.radialGradient(
     ),
 )
 
-fun WearPalette.screenBackgroundColor(): Color = lerp(gradientMiddle, gradientBottom, 0.58f)
-fun WearPalette.surfaceContainerColor(): Color = lerp(screenBackgroundColor(), Color.White, 0.10f).copy(alpha = 0.95f)
-fun WearPalette.surfaceContainerHighColor(): Color = lerp(screenBackgroundColor(), Color.White, 0.16f).copy(alpha = 0.98f)
+fun WearPalette.screenBackgroundColor(): Color = Color.Black
+fun WearPalette.surfaceContainerLowestColor(): Color = surfaceContainerLowest
+fun WearPalette.surfaceContainerLowColor(): Color = surfaceContainerLow
+fun WearPalette.surfaceContainerColor(): Color = surfaceContainer
+fun WearPalette.surfaceContainerHighColor(): Color = surfaceContainerHigh
+fun WearPalette.surfaceContainerHighestColor(): Color = surfaceContainerHighest
 
 @Composable
 fun WearPixelPlayTheme(
@@ -109,18 +120,30 @@ fun WearPixelPlayTheme(
 }
 
 private fun WearThemePalette.toWearPalette(): WearPalette {
+    val surface = colorOrDefault(surfaceContainerArgb, Color(chipContainerArgb))
+    val surfaceLowest = colorOrDefault(surfaceContainerLowestArgb, lerp(surface, Color.Black, 0.16f))
+    val surfaceLow = colorOrDefault(surfaceContainerLowArgb, lerp(surface, Color.Black, 0.06f))
+    val surfaceHigh = colorOrDefault(surfaceContainerHighArgb, lerp(surface, Color.White, 0.08f))
+    val surfaceHighest = colorOrDefault(surfaceContainerHighestArgb, lerp(surface, Color.White, 0.14f))
+    val disabledContainer = colorOrDefault(controlDisabledContainerArgb, surfaceHighest)
+
     return WearPalette(
         gradientTop = Color(gradientTopArgb),
         gradientMiddle = Color(gradientMiddleArgb),
         gradientBottom = Color(gradientBottomArgb),
+        surfaceContainerLowest = surfaceLowest,
+        surfaceContainerLow = surfaceLow,
+        surfaceContainer = surface,
+        surfaceContainerHigh = surfaceHigh,
+        surfaceContainerHighest = surfaceHighest,
         textPrimary = Color(textPrimaryArgb),
         textSecondary = Color(textSecondaryArgb),
         textError = Color(textErrorArgb),
         controlContainer = Color(controlContainerArgb),
         controlContent = Color(controlContentArgb),
-        controlDisabledContainer = Color(controlDisabledContainerArgb),
-        controlDisabledContent = Color(controlDisabledContentArgb),
-        chipContainer = Color(chipContainerArgb),
+        controlDisabledContainer = disabledContainer,
+        controlDisabledContent = colorOrDefault(controlDisabledContentArgb, bestContrastContent(disabledContainer)),
+        chipContainer = colorOrDefault(chipContainerArgb, surface),
         chipContent = Color(chipContentArgb),
         favoriteActive = Color(favoriteActiveArgb),
         shuffleActive = Color(shuffleActiveArgb),
@@ -145,16 +168,26 @@ private fun buildPaletteFromSeedColor(seed: Color): WearPalette {
     val middle = lerp(tunedSeed, Color.Black, 0.57f)
     val bottom = lerp(tunedSeed, Color.Black, 0.84f)
     val surfaceBackground = lerp(middle, bottom, 0.58f)
-    val chipContainer = lerp(surfaceBackground, Color.White, 0.10f).copy(alpha = 0.95f)
+    val surfaceContainerLowest = lerp(surfaceBackground, Color.Black, 0.18f).copy(alpha = 0.96f)
+    val surfaceContainerLow = lerp(surfaceBackground, Color.White, 0.06f).copy(alpha = 0.95f)
+    val surfaceContainer = lerp(surfaceBackground, Color.White, 0.10f).copy(alpha = 0.95f)
+    val surfaceContainerHigh = lerp(surfaceBackground, Color.White, 0.14f).copy(alpha = 0.97f)
+    val surfaceContainerHighest = lerp(surfaceBackground, Color.White, 0.20f).copy(alpha = 0.98f)
+    val chipContainer = surfaceContainer
     val controlContainer = lerp(surfaceBackground, Color.White, 0.18f).copy(alpha = 0.98f)
     val controlContent = bestContrastContent(controlContainer)
-    val controlDisabledContainer = lerp(surfaceBackground, Color.Black, 0.34f).copy(alpha = 0.96f)
+    val controlDisabledContainer = surfaceContainerHighest
     val controlDisabledContent = bestContrastContent(controlDisabledContainer)
 
     return WearPalette(
         gradientTop = top,
         gradientMiddle = middle,
         gradientBottom = bottom,
+        surfaceContainerLowest = surfaceContainerLowest,
+        surfaceContainerLow = surfaceContainerLow,
+        surfaceContainer = surfaceContainer,
+        surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
         textPrimary = Color(0xFFF7F2FF),
         textSecondary = Color(0xFFE8DEF8),
         textError = Color(0xFFFFB8C7),
@@ -168,6 +201,10 @@ private fun buildPaletteFromSeedColor(seed: Color): WearPalette {
         shuffleActive = buildAccentFromSeed(seedArgb, hueShift = -72f),
         repeatActive = buildAccentFromSeed(seedArgb, hueShift = -22f),
     )
+}
+
+private fun colorOrDefault(argb: Int, fallback: Color): Color {
+    return if (argb != 0) Color(argb) else fallback
 }
 
 private fun buildAccentFromSeed(seedColor: Int, hueShift: Float): Color {
