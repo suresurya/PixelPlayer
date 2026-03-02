@@ -22,6 +22,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,6 +44,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.LazyColumn
@@ -81,6 +83,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -337,47 +340,52 @@ fun CastBottomSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 12.dp
     ) {
-        Box(
-            modifier = Modifier
-                .padding(bottom = 18.dp)
+        // AQUÍ APLICAMOS EL FIX: Anulamos la fábrica de overscroll para todo lo que esté aquí adentro
+        CompositionLocalProvider(
+            LocalOverscrollFactory provides null
         ) {
-            if (missingPermissions.isNotEmpty()) {
-                CastPermissionStep(
-                    missingPermissions = missingPermissions,
-                    onRequestPermissions = {
-                        permissionLauncher.launch(missingPermissions.toTypedArray())
-                    }
-                )
-            } else {
-                CastSheetContent(
-                    state = uiState,
-                    onSelectDevice = { id ->
-                        routes.firstOrNull { it.id == id }?.let { playerViewModel.selectRoute(it) }
-                    },
-                    onDisconnect = {
-                        playerViewModel.disconnect()
-                        onDismiss()
-                    },
-                    onVolumeChange = { value ->
-                        if (uiState.activeDevice.isRemote) {
-                            playerViewModel.setRouteVolume(value.toInt())
-                        } else {
-                            playerViewModel.setTrackVolume(value)
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 18.dp)
+            ) {
+                if (missingPermissions.isNotEmpty()) {
+                    CastPermissionStep(
+                        missingPermissions = missingPermissions,
+                        onRequestPermissions = {
+                            permissionLauncher.launch(missingPermissions.toTypedArray())
                         }
-                    },
-                    onTurnOnWifi = {
-                        val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
-                    },
-                    onOpenBluetoothSettings = {
-                        val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
-                    },
-                    onRefresh = { playerViewModel.refreshCastRoutes() },
-                    startWithControls = isRemoteSession
-                )
+                    )
+                } else {
+                    CastSheetContent(
+                        state = uiState,
+                        onSelectDevice = { id ->
+                            routes.firstOrNull { it.id == id }?.let { playerViewModel.selectRoute(it) }
+                        },
+                        onDisconnect = {
+                            playerViewModel.disconnect()
+                            onDismiss()
+                        },
+                        onVolumeChange = { value ->
+                            if (uiState.activeDevice.isRemote) {
+                                playerViewModel.setRouteVolume(value.toInt())
+                            } else {
+                                playerViewModel.setTrackVolume(value)
+                            }
+                        },
+                        onTurnOnWifi = {
+                            val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                        },
+                        onOpenBluetoothSettings = {
+                            val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                        },
+                        onRefresh = { playerViewModel.refreshCastRoutes() },
+                        startWithControls = isRemoteSession
+                    )
+                }
             }
         }
     }
@@ -595,32 +603,43 @@ private fun CastSheetContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
-            ) { page ->
-                when (page) {
-                    0 -> CastControlsTabContent(
-                        state = state,
-                        allConnectivityOff = allConnectivityOff,
-                        onDisconnect = onDisconnect,
-                        onVolumeChange = onVolumeChange,
-                        onTurnOnWifi = onTurnOnWifi,
-                        onOpenBluetoothSettings = onOpenBluetoothSettings,
-                        onRefresh = onRefresh,
-                        navBarPadding = navBarPadding
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(
+                        animationSpec = tween(durationMillis = 280),
+                        alignment = Alignment.TopCenter
                     )
-                    1 -> CastDevicesTabContent(
-                        state = state,
-                        allConnectivityOff = allConnectivityOff,
-                        onSelectDevice = onSelectDevice,
-                        onDisconnect = onDisconnect,
-                        onTurnOnWifi = onTurnOnWifi,
-                        onOpenBluetoothSettings = onOpenBluetoothSettings,
-                        onRefresh = onRefresh,
-                        navBarPadding = navBarPadding
-                    )
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) { page ->
+                    when (page) {
+                        0 -> CastControlsTabContent(
+                            state = state,
+                            allConnectivityOff = allConnectivityOff,
+                            onDisconnect = onDisconnect,
+                            onVolumeChange = onVolumeChange,
+                            onTurnOnWifi = onTurnOnWifi,
+                            onOpenBluetoothSettings = onOpenBluetoothSettings,
+                            onRefresh = onRefresh,
+                            navBarPadding = navBarPadding
+                        )
+                        1 -> CastDevicesTabContent(
+                            state = state,
+                            allConnectivityOff = allConnectivityOff,
+                            onSelectDevice = onSelectDevice,
+                            onDisconnect = onDisconnect,
+                            onTurnOnWifi = onTurnOnWifi,
+                            onOpenBluetoothSettings = onOpenBluetoothSettings,
+                            onRefresh = onRefresh,
+                            navBarPadding = navBarPadding
+                        )
+                    }
                 }
             }
         }
