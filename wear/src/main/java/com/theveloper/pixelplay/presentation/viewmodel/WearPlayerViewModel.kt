@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theveloper.pixelplay.data.WearAudioOutputRoute
+import com.theveloper.pixelplay.data.WearLocalQueueState
 import com.theveloper.pixelplay.data.WearLocalPlayerRepository
 import com.theveloper.pixelplay.data.WearOutputTarget
 import com.theveloper.pixelplay.data.WearPlaybackController
@@ -54,6 +55,7 @@ class WearPlayerViewModel @Inject constructor(
 
     /** Whether local playback is currently active on the watch */
     val isLocalPlaybackActive: StateFlow<Boolean> = localPlayerRepository.isLocalPlaybackActive
+    val localQueueState: StateFlow<WearLocalQueueState> = localPlayerRepository.localQueueState
     private val localSongs = transferRepository.localSongs
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -245,6 +247,11 @@ class WearPlayerViewModel @Inject constructor(
 
     fun openWatchOutputPicker() {
         volumeRepository.launchWatchAudioOutputPicker()
+    }
+
+    fun playLocalQueueIndex(index: Int) {
+        if (!isWatchOutputSelected.value) return
+        localPlayerRepository.playQueueIndex(index)
     }
 
     fun setWatchRouteDiscoveryEnabled(enabled: Boolean) {

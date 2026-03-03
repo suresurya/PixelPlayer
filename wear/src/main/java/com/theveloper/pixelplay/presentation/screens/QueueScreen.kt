@@ -69,12 +69,16 @@ fun QueueScreen(
 ) {
     val palette = LocalWearPalette.current
     val playerState by viewModel.playerState.collectAsState()
+    val localQueueState by viewModel.localQueueState.collectAsState()
+    val isLocalPlaybackActive by viewModel.isLocalPlaybackActive.collectAsState()
     val uiState by browseViewModel.uiState.collectAsState()
     val isPhoneConnected by viewModel.isPhoneConnected.collectAsState()
     val isWatchOutputSelected by viewModel.isWatchOutputSelected.collectAsState()
     val timerState by viewModel.sleepTimerUiState.collectAsState()
 
-    val controlsEnabled = isPhoneConnected && !isWatchOutputSelected
+    val showingLocalQueue = isWatchOutputSelected
+    val remoteControlsEnabled = isPhoneConnected && !isWatchOutputSelected
+    val queueSelectionEnabled = showingLocalQueue || remoteControlsEnabled
     val columnState = rememberResponsiveColumnState(
         contentPadding = {
             PaddingValues(
@@ -86,13 +90,13 @@ fun QueueScreen(
         },
     )
 
-    LaunchedEffect(controlsEnabled) {
-        if (controlsEnabled) {
+    LaunchedEffect(remoteControlsEnabled) {
+        if (remoteControlsEnabled) {
             browseViewModel.loadItems(WearBrowseRequest.QUEUE)
         }
     }
-    LaunchedEffect(playerState.songId, controlsEnabled) {
-        if (controlsEnabled) {
+    LaunchedEffect(playerState.songId, remoteControlsEnabled) {
+        if (remoteControlsEnabled) {
             browseViewModel.loadItems(WearBrowseRequest.QUEUE)
         }
     }
@@ -111,7 +115,7 @@ fun QueueScreen(
                 shuffleEnabled = playerState.isShuffleEnabled,
                 repeatMode = playerState.repeatMode,
                 timerEnabled = timerState.mode != WearSleepTimerMode.OFF,
-                enabled = controlsEnabled,
+                enabled = remoteControlsEnabled,
                 onShuffleClick = {
                     viewModel.toggleShuffle()
                     browseViewModel.refresh()
@@ -136,7 +140,7 @@ fun QueueScreen(
                         .padding(horizontal = 8.dp),
                     columnState = columnState,
                 ) {
-                    if (!controlsEnabled) {
+                    if (!showingLocalQueue && !remoteControlsEnabled) {
                         item {
                             Text(
                                 text = if (!isPhoneConnected) {
@@ -153,7 +157,42 @@ fun QueueScreen(
                             )
                         }
                         item { Spacer(modifier = Modifier.height(2.dp)) }
-                    } else {
+                    }
+
+                    if (showingLocalQueue) {
+                        if (localQueueState.items.isEmpty()) {
+                            item {
+                                Text(
+                                    text = if (isLocalPlaybackActive) {
+                                        "Queue is empty"
+                                    } else {
+                                        "Play something on watch first"
+                                    },
+                                    style = MaterialTheme.typography.body2,
+                                    color = palette.textSecondary,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 20.dp),
+                                )
+                            }
+                        } else {
+                            items(localQueueState.items.size) { index ->
+                                val item = localQueueState.items[index]
+                                val isCurrentSong = index == localQueueState.currentIndex
+                                QueueSongChip(
+                                    song = item,
+                                    enabled = queueSelectionEnabled,
+                                    isCurrentSong = isCurrentSong,
+                                    isPlayingSong = isCurrentSong && playerState.isPlaying,
+                                    onClick = {
+                                        viewModel.playLocalQueueIndex(index)
+                                    },
+                                )
+                            }
+                        }
+                        item { Spacer(modifier = Modifier.height(24.dp)) }
+                    } else if (remoteControlsEnabled) {
                         when (val state = uiState) {
                             is BrowseUiState.Loading -> {
                                 item {
@@ -212,7 +251,7 @@ fun QueueScreen(
                                         val isCurrentSong = item.subtitle.startsWith("Playing")
                                         QueueSongChip(
                                             song = item,
-                                            enabled = controlsEnabled,
+                                            enabled = queueSelectionEnabled,
                                             isCurrentSong = isCurrentSong,
                                             isPlayingSong = isCurrentSong && playerState.isPlaying,
                                             onClick = {

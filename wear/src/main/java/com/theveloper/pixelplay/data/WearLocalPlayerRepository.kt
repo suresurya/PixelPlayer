@@ -12,6 +12,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.theveloper.pixelplay.data.local.LocalSongDao
 import com.theveloper.pixelplay.data.local.LocalSongEntity
+import com.theveloper.pixelplay.shared.WearLibraryItem
 import com.theveloper.pixelplay.shared.WearThemePalette
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -83,6 +84,9 @@ class WearLocalPlayerRepository @Inject constructor(
 
     private val _localAlbumArt = MutableStateFlow<Bitmap?>(null)
     val localAlbumArt: StateFlow<Bitmap?> = _localAlbumArt.asStateFlow()
+
+    private val _localQueueState = MutableStateFlow(WearLocalQueueState())
+    val localQueueState: StateFlow<WearLocalQueueState> = _localQueueState.asStateFlow()
 
     private var positionUpdateJob: Job? = null
     private var currentQueueSongIds: List<String> = emptyList()
@@ -202,6 +206,7 @@ class WearLocalPlayerRepository @Inject constructor(
             player.prepare()
             player.play()
             _isLocalPlaybackActive.value = true
+            updateQueueState(currentIndex = startIndexSafe)
             updateState()
             Timber.tag(TAG).d(
                 "Playing locally: ${queueSongs.getOrNull(startIndexSafe)?.title}, queue=${queueSongs.size}"
@@ -240,6 +245,22 @@ class WearLocalPlayerRepository @Inject constructor(
         exoPlayer?.seekTo(positionMs)
     }
 
+    fun playQueueIndex(index: Int) {
+        scope.launch {
+            withContext(Dispatchers.Main) {
+                val player = exoPlayer ?: return@withContext
+                if (index !in currentQueueSongIds.indices) return@withContext
+
+                player.seekToDefaultPosition(index)
+                if (player.playbackState == Player.STATE_IDLE) {
+                    player.prepare()
+                }
+                player.play()
+                updateState()
+            }
+        }
+    }
+
     suspend fun removeSongFromActiveQueue(songId: String) {
         withContext(Dispatchers.Main) {
             val queueIndex = currentQueueSongIds.indexOf(songId)
@@ -263,6 +284,7 @@ class WearLocalPlayerRepository @Inject constructor(
             }
             if (lastPaletteSongId == songId) lastPaletteSongId = ""
             if (lastArtworkSongId == songId) lastArtworkSongId = ""
+            updateQueueState()
             updateState()
         }
     }
@@ -279,6 +301,7 @@ class WearLocalPlayerRepository @Inject constructor(
         _localThemePalette.value = null
         _localPaletteSeedArgb.value = null
         _localAlbumArt.value = null
+        _localQueueState.value = WearLocalQueueState()
         currentQueueSongIds = emptyList()
         currentQueueSongsById = emptyMap()
         currentQueueItemsById = emptyMap()
@@ -299,6 +322,7 @@ class WearLocalPlayerRepository @Inject constructor(
             currentPositionMs = player.currentPosition,
             totalDurationMs = player.duration.coerceAtLeast(0L),
         )
+        updateQueueState(currentIndex = player.currentMediaItemIndex)
         updatePaletteForSong(currentItem?.mediaId.orEmpty())
         updateArtworkForSong(currentItem?.mediaId.orEmpty())
     }
@@ -316,6 +340,44 @@ class WearLocalPlayerRepository @Inject constructor(
     private fun stopPositionUpdates() {
         positionUpdateJob?.cancel()
         positionUpdateJob = null
+    }
+
+    private fun updateQueueState(currentIndex: Int? = null) {
+        val queueItems = currentQueueSongIds.mapIndexedNotNull { index, songId ->
+            val queueItem = currentQueueItemsById[songId] ?: return@mapIndexedNotNull null
+            val subtitle = when {
+                index == (currentIndex ?: exoPlayer?.currentMediaItemIndex ?: -1) -> {
+                    val supportingText = queueItem.artist.ifBlank { queueItem.album }
+                    if (supportingText.isBlank()) {
+                        "Playing on watch"
+                    } else {
+                        "Playing · $supportingText"
+                    }
+                }
+
+                queueItem.artist.isNotBlank() -> queueItem.artist
+                else -> queueItem.album
+            }
+
+            WearLibraryItem(
+                id = index.toString(),
+                title = queueItem.title,
+                subtitle = subtitle,
+                type = WearLibraryItem.TYPE_SONG,
+            )
+        }
+
+        val rawCurrentIndex = currentIndex ?: exoPlayer?.currentMediaItemIndex ?: -1
+        val resolvedCurrentIndex = if (rawCurrentIndex in queueItems.indices) {
+            rawCurrentIndex
+        } else {
+            -1
+        }
+
+        _localQueueState.value = WearLocalQueueState(
+            items = queueItems,
+            currentIndex = resolvedCurrentIndex,
+        )
     }
 
     private fun updatePaletteForSong(songId: String) {
