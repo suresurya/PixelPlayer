@@ -22,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -715,11 +714,7 @@ private fun SongActionChip(
     onClick: () -> Unit,
 ) {
     val palette = LocalWearPalette.current
-    val contentColor = if (enabled) {
-        if (backgroundColor.luminance() > 0.46f) Color.Black.copy(alpha = 0.86f) else palette.textPrimary
-    } else {
-        palette.textSecondary
-    }
+    val contentColor = if (enabled) palette.textPrimary else palette.textSecondary.copy(alpha = 0.72f)
 
     Chip(
         label = {
@@ -736,7 +731,7 @@ private fun SongActionChip(
                 modifier = Modifier.size(18.dp),
             )
         },
-        onClick = onClick,
+        onClick = { if (enabled) onClick() },
         enabled = enabled,
         colors = ChipDefaults.chipColors(
             backgroundColor = if (enabled) backgroundColor
