@@ -8,7 +8,6 @@ import android.os.Environment
 import android.os.Trace // Import Trace
 import android.provider.MediaStore
 import android.util.Log
-import androidx.core.net.toUri
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.OneTimeWorkRequestBuilder
@@ -541,6 +540,7 @@ constructor(
         // which isn't available in the simple albumMap (which only has ID)
         val albumEntities = correctedSongs.groupBy { it.albumId }.map { (catAlbumId, songsInAlbum) ->
              val firstSong = songsInAlbum.first()
+             val representativeAlbumArt = songsInAlbum.firstNotNullOfOrNull { it.albumArtUriString }
              // Determine Album Artist Name
              val determinedAlbumArtist = firstSong.albumArtist?.takeIf { it.isNotBlank() } 
                  ?: firstSong.artistName
@@ -553,7 +553,7 @@ constructor(
                  title = firstSong.albumName,
                  artistName = determinedAlbumArtist,
                  artistId = determinedAlbumArtistId,
-                 albumArtUriString = firstSong.albumArtUriString,
+                 albumArtUriString = representativeAlbumArt,
                  songCount = songsInAlbum.size, 
                  year = firstSong.year
              )
@@ -565,44 +565,6 @@ constructor(
                 artists = artistEntities,
                 crossRefs = allCrossRefs
         )
-    }
-
-    private fun fetchAlbumArtUrisByAlbumId(): Map<Long, String> {
-        val projection = arrayOf(MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART)
-
-        return buildMap {
-            contentResolver.query(
-                            MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                            projection,
-                            null,
-                            null,
-                            null
-                    )
-                    ?.use { cursor ->
-                        val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums._ID)
-                        val artCol = cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART)
-                        if (artCol >= 0) {
-                            while (cursor.moveToNext()) {
-                                val albumId = cursor.getLong(idCol)
-                                val storedArtPath = cursor.getString(artCol)
-                                val uriString =
-                                        when {
-                                            !storedArtPath.isNullOrBlank() ->
-                                                    File(storedArtPath).toURI().toString()
-                                            albumId > 0 ->
-                                                    ContentUris.withAppendedId(
-                                                                    "content://media/external/audio/albumart".toUri(),
-                                                                    albumId
-                                                            )
-                                                            .toString()
-                                            else -> null
-                                        }
-
-                                if (uriString != null) put(albumId, uriString)
-                            }
-                        }
-                    }
-        }
     }
 
     /**
@@ -728,6 +690,15 @@ constructor(
 
     private fun isSongUnchanged(raw: RawSongData, existing: SongEntity?): Boolean {
         if (existing == null) return false
+        existing.albumArtUriString?.let { albumArtUriString ->
+            if (!albumArtUriString.contains("song_art_${existing.id}")) {
+                return false
+            }
+
+            if (!AlbumArtUtils.hasCachedAlbumArt(applicationContext, existing.id)) {
+                return false
+            }
+        }
 
         val parentDir = File(raw.filePath).parent ?: ""
         val existingDateModifiedSeconds = TimeUnit.MILLISECONDS.toSeconds(existing.dateAdded)
@@ -756,7 +727,6 @@ constructor(
         Trace.beginSection("SyncWorker.fetchMusicFromMediaStore")
 
         val deepScan = forceMetadata
-        val albumArtByAlbumId = if (!deepScan) fetchAlbumArtUrisByAlbumId() else emptyMap()
         val genreMap = fetchGenreMap() // Load genres upfront
 
         val projection =
@@ -924,8 +894,14 @@ constructor(
                 batch.map { raw ->
                     async {
                         semaphore.withPermit {
-                            val mediaStoreSong = processSongData(raw, albumArtByAlbumId, genreMap, deepScan)
                             val localSong = existingMap[raw.id]
+                            val mediaStoreSong =
+                                processSongData(
+                                    raw = raw,
+                                    genreMap = genreMap,
+                                    deepScan = deepScan,
+                                    forceAlbumArtRefresh = deepScan || localSong != null
+                                )
 
                             val song = if (localSong != null) {
                                 // Preserve user-edited fields
@@ -943,7 +919,7 @@ constructor(
                                     albumName = if (localSong.albumName.isNotBlank() && localSong.albumName != mediaStoreSong.albumName) localSong.albumName else mediaStoreSong.albumName,
                                     genre = localSong.genre ?: mediaStoreSong.genre,
                                     trackNumber = if (localSong.trackNumber != 0) localSong.trackNumber else mediaStoreSong.trackNumber,
-                                    albumArtUriString = localSong.albumArtUriString ?: mediaStoreSong.albumArtUriString
+                                    albumArtUriString = mediaStoreSong.albumArtUriString
                                 )
                             } else {
                                 mediaStoreSong
@@ -985,28 +961,22 @@ constructor(
      */
     private suspend fun processSongData(
             raw: RawSongData,
-            albumArtByAlbumId: Map<Long, String>,
             genreMap: Map<Long, String>,
-            deepScan: Boolean
+            deepScan: Boolean,
+            forceAlbumArtRefresh: Boolean
     ): SongEntity {
         val parentDir = java.io.File(raw.filePath).parent ?: ""
         val contentUriString =
                 ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, raw.id)
                         .toString()
 
-        var albumArtUriString = albumArtByAlbumId[raw.albumId]
-        if (deepScan) {
-            albumArtUriString =
-                    AlbumArtUtils.getAlbumArtUri(
-                            applicationContext,
-                            musicDao,
-                            raw.filePath,
-                            raw.albumId,
-                            raw.id,
-                            true
-                    )
-                            ?: albumArtUriString
-        }
+        var albumArtUriString =
+                AlbumArtUtils.getAlbumArtUri(
+                        applicationContext,
+                        raw.filePath,
+                        raw.id,
+                        forceAlbumArtRefresh
+                )
         val audioMetadata =
                 if (deepScan) getAudioMetadata(musicDao, raw.id, raw.filePath, true) else null
 

@@ -2854,6 +2854,7 @@ fun AlbumGridItemRedesigned(
     val gradientBaseColor = itemDesignColorScheme.primaryContainer
     val onGradientColor = itemDesignColorScheme.onPrimaryContainer
     val cardCornerRadius = 20.dp
+    val cardShape = RoundedCornerShape(cardCornerRadius)
     val selectionScale by animateFloatAsState(
         targetValue = if (isSelected) 0.985f else 1f,
         animationSpec = tween(durationMillis = 220),
@@ -2868,13 +2869,13 @@ fun AlbumGridItemRedesigned(
     if (isLoading) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(cardCornerRadius),
+            shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
         ) {
             Column(
                 modifier = Modifier.background(
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(cardCornerRadius)
+                    shape = cardShape
                 )
             ) {
                 ShimmerBox(
@@ -2920,12 +2921,13 @@ fun AlbumGridItemRedesigned(
                         Modifier.border(
                             width = selectionBorderWidth,
                             color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(cardCornerRadius)
+                            shape = cardShape
                         )
                     } else {
                         Modifier
                     }
                 )
+                .clip(cardShape)
                 .combinedClickable(
                     onClick = {
                         if (isSelectionMode) {
@@ -2936,7 +2938,7 @@ fun AlbumGridItemRedesigned(
                     },
                     onLongClick = onLongPress
                 ),
-            shape = RoundedCornerShape(cardCornerRadius),
+            shape = cardShape,
             //elevation = CardDefaults.cardElevation(defaultElevation = 4.dp, pressedElevation = 8.dp),
             colors = CardDefaults.cardColors(containerColor = itemDesignColorScheme.surfaceVariant.copy(alpha = 0.3f))
         ) {
@@ -2944,7 +2946,7 @@ fun AlbumGridItemRedesigned(
                 Column(
                     modifier = Modifier.background(
                         color = gradientBaseColor,
-                        shape = RoundedCornerShape(cardCornerRadius)
+                        shape = cardShape
                     )
                 ) {
                     Box(contentAlignment = Alignment.BottomStart) {
@@ -3124,6 +3126,7 @@ fun AlbumListItem(
     val gradientBaseColor = itemDesignColorScheme.primaryContainer
     val onGradientColor = itemDesignColorScheme.onPrimaryContainer
     val cardCornerRadius = 16.dp
+    val cardShape = RoundedCornerShape(cardCornerRadius)
     val selectionScale by animateFloatAsState(
         targetValue = if (isSelected) 0.99f else 1f,
         animationSpec = tween(durationMillis = 200),
@@ -3140,7 +3143,7 @@ fun AlbumListItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp),
-            shape = RoundedCornerShape(cardCornerRadius),
+            shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -3182,12 +3185,13 @@ fun AlbumListItem(
                         Modifier.border(
                             width = selectionBorderWidth,
                             color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(cardCornerRadius)
+                            shape = cardShape
                         )
                     } else {
                         Modifier
                     }
                 )
+                .clip(cardShape)
                 .combinedClickable(
                     onClick = {
                         if (isSelectionMode) {
@@ -3198,7 +3202,7 @@ fun AlbumListItem(
                     },
                     onLongClick = onLongPress
                 ),
-            shape = RoundedCornerShape(cardCornerRadius),
+            shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = itemDesignColorScheme.surfaceVariant.copy(alpha = 0.3f))
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
