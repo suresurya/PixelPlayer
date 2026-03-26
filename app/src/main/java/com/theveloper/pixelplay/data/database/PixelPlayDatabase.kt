@@ -577,7 +577,7 @@ abstract class PixelPlayDatabase : RoomDatabase() {
                         is_favorite INTEGER NOT NULL DEFAULT 0,
                         lyrics TEXT DEFAULT null,
                         track_number INTEGER NOT NULL DEFAULT 0,
-                        disc_number INTEGER,
+                        disc_number INTEGER DEFAULT null,
                         year INTEGER NOT NULL DEFAULT 0,
                         date_added INTEGER NOT NULL DEFAULT 0,
                         mime_type TEXT,
@@ -858,6 +858,48 @@ abstract class PixelPlayDatabase : RoomDatabase() {
             return columns
         }
 
+        private fun getTableColumnDefaultValue(
+            db: SupportSQLiteDatabase,
+            tableName: String,
+            columnName: String
+        ): String? {
+            db.query("PRAGMA table_info(`$tableName`)").use { cursor ->
+                val nameIndex = cursor.getColumnIndex("name")
+                val defaultValueIndex = cursor.getColumnIndex("dflt_value")
+                if (nameIndex == -1 || defaultValueIndex == -1) return null
+
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(nameIndex) == columnName) {
+                        return cursor.getString(defaultValueIndex)
+                    }
+                }
+            }
+            return null
+        }
+
+        private fun ensureSongsTableHasDiscNumber(db: SupportSQLiteDatabase) {
+            if (!tableExists(db, "songs")) {
+                recreateSongsTable(db)
+                return
+            }
+
+            val columns = getTableColumns(db, "songs")
+            if ("disc_number" !in columns) {
+                try {
+                    db.execSQL("ALTER TABLE songs ADD COLUMN disc_number INTEGER DEFAULT null")
+                } catch (_: Exception) {
+                    // Restored/drifted databases may already contain a partially applied column.
+                }
+            }
+
+            val refreshedColumns = getTableColumns(db, "songs")
+            val discNumberDefault = getTableColumnDefaultValue(db, "songs", "disc_number")
+
+            if ("disc_number" !in refreshedColumns || !discNumberDefault.equals("null", ignoreCase = true)) {
+                recreateSongsTable(db)
+            }
+        }
+
         private fun columnExpr(columns: Set<String>, columnName: String, fallbackExpr: String): String {
             return if (columnName in columns) {
                 "COALESCE($columnName, $fallbackExpr)"
@@ -973,7 +1015,7 @@ abstract class PixelPlayDatabase : RoomDatabase() {
          */
         val MIGRATION_30_31 = object : Migration(30, 31) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE songs ADD COLUMN disc_number INTEGER")
+                ensureSongsTableHasDiscNumber(db)
             }
         }
 
