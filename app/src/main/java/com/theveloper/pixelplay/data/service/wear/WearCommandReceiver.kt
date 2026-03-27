@@ -31,6 +31,7 @@ import com.theveloper.pixelplay.shared.WearTransferRequest
 import com.theveloper.pixelplay.shared.WearVolumeCommand
 import com.theveloper.pixelplay.utils.MediaItemBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,6 +39,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
@@ -121,6 +123,21 @@ class WearCommandReceiver : WearableListenerService() {
                         }
                         WearPlaybackCommand.NEXT -> controller.seekToNext()
                         WearPlaybackCommand.PREVIOUS -> controller.seekToPrevious()
+                        WearPlaybackCommand.PLAY_QUEUE_INDEX -> {
+                            val queueIndex = command.queueIndex
+                            if (queueIndex == null) {
+                                Timber.tag(TAG).w("PLAY_QUEUE_INDEX missing queueIndex")
+                            } else if (queueIndex !in 0 until controller.mediaItemCount) {
+                                Timber.tag(TAG).w(
+                                    "PLAY_QUEUE_INDEX out of bounds: %d (size=%d)",
+                                    queueIndex,
+                                    controller.mediaItemCount
+                                )
+                            } else {
+                                controller.seekToDefaultPosition(queueIndex)
+                                controller.play()
+                            }
+                        }
                         WearPlaybackCommand.TOGGLE_SHUFFLE -> {
                             controller.sendCustomCommand(
                                 SessionCommand(
@@ -373,6 +390,10 @@ class WearCommandReceiver : WearableListenerService() {
                     .map { song -> song.toWearLibraryItem() }
             }
 
+            WearBrowseRequest.QUEUE -> {
+                getCurrentQueueItems()
+            }
+
             else -> {
                 Timber.tag(TAG).w("Unknown browse type: $browseType")
                 emptyList()
@@ -387,6 +408,57 @@ class WearCommandReceiver : WearableListenerService() {
             subtitle = displayArtist,
             type = WearLibraryItem.TYPE_SONG,
         )
+    }
+
+    private suspend fun getCurrentQueueItems(): List<WearLibraryItem> {
+        val deferred = CompletableDeferred<List<WearLibraryItem>>()
+        getOrBuildMediaController { controller ->
+            runCatching {
+                buildCurrentQueueItems(controller)
+            }.onSuccess(deferred::complete)
+                .onFailure(deferred::completeExceptionally)
+        }
+        return withTimeout(5_000L) {
+            deferred.await()
+        }
+    }
+
+    private fun buildCurrentQueueItems(controller: MediaController): List<WearLibraryItem> {
+        val queueSize = controller.mediaItemCount
+        if (queueSize <= 0) return emptyList()
+
+        val currentIndex = controller.currentMediaItemIndex
+            .takeIf { it in 0 until queueSize }
+            ?: 0
+
+        val queueIndices = buildList(queueSize) {
+            for (index in currentIndex until queueSize) {
+                add(index)
+            }
+            for (index in 0 until currentIndex) {
+                add(index)
+            }
+        }
+
+        return queueIndices.map { actualIndex ->
+            val mediaItem = controller.getMediaItemAt(actualIndex)
+            val metadata = mediaItem.mediaMetadata
+            val title = metadata.title?.toString()?.takeIf { it.isNotBlank() }
+                ?: "Track ${actualIndex + 1}"
+            val artist = metadata.artist?.toString()?.takeIf { it.isNotBlank() }.orEmpty()
+            val isCurrentItem = actualIndex == currentIndex
+            WearLibraryItem(
+                id = actualIndex.toString(),
+                title = title,
+                subtitle = when {
+                    isCurrentItem && artist.isNotBlank() -> "Playing · $artist"
+                    isCurrentItem -> "Playing"
+                    artist.isNotBlank() -> artist
+                    else -> ""
+                },
+                type = WearLibraryItem.TYPE_SONG,
+            )
+        }
     }
 
     // ---- Volume handling ----
